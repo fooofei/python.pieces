@@ -4,6 +4,7 @@ import random
 
 def red_envelope_random(cents, people_number):
     '''
+    - ref http://www.letiantian.me/2016-04-23-red-envelope/
     - 红包前最低单位是分，是整数
     - 每人最低得到 1 分
     :param cents:
