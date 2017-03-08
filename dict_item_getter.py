@@ -3,7 +3,7 @@
 
 
 def dict_item_getter(data, keys):
-    f = lambda x, y: x[y] if y in x else None
+    f = lambda x, y: x[y] if x and y in x else None
     return reduce(f, keys, data)
 
 
