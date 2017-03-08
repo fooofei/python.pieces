@@ -14,23 +14,30 @@ def red_envelope_random(cents, people_number):
     if not (isinstance(cents,int) and cents and people_number and cents>=people_number):
         raise ValueError('error')
 
+    # 先给每人发 1 分保底
     result_fix_base = [1]*people_number
     result_rand = []
     rand_cents = cents - 1 * people_number
     rest_cents = rand_cents
 
+    # 得到一组随机数
     rand_numbers = [random.uniform(10,100) for _ in range(people_number)]
     rand_sum = float(sum(rand_numbers))
 
+    # 按照随机数的占比 给每个人发钱
     for inx in range(people_number):
         scale = rand_numbers[inx] / rand_sum
         o =  int(rand_cents*scale)
         result_rand.append(o)
         rest_cents -= o
     else:
+        # 最后一个把因为 float 靠下取整余下的钱都拿了
         result_rand[-1] += rest_cents
 
+    # 固定钱 + 随机钱
     result = [ a+b for a, b in zip(result_fix_base,result_rand)]
+
+    # 打乱顺序
     random.shuffle(result)
 
     assert sum(result) == cents
