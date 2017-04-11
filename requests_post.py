@@ -1,6 +1,9 @@
 ﻿# coding=utf-8
 '''
 记录我犯过的错误
+
+http requests post 的使用
+
 '''
 
 import requests
