@@ -250,6 +250,9 @@ def io_thread_map_one_ins(thread_func,thread_data,ins_generator_func,max_workers
         return list(r)
 
 def dict_item_getter(data, keys):
+    '''
+      dict_item_getter({'1': {'2': {'3': 'hello'}}}, ['1', '2', '3']) = 'hello'
+    '''
     f = lambda x, y: x[y] if y in x else None
     return reduce(f, keys, data)
 
