@@ -17,7 +17,7 @@ $ tree 1
 
 ```
 
-package1/\__init\__.py
+package1/\_\_init\_\_.py
 ```
 ```
 package1/mod1.py
@@ -29,7 +29,7 @@ def func_mod1():
     print ('from {}'.format(func_mod1.__name__))
 ```
 
-package2/\__init\__.py
+package2/\_\_init\_\_.py
 ```
 ```
 
