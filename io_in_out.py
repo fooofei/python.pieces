@@ -26,6 +26,7 @@ scandir.walk  benchmark :
 # 2017-02-22 v2.00 修复其他国语言编码异常
 # 2017-02-23 v2.10 add io map
 # 2017-03-14 v2.20 io_out_arg 增加参数
+# 2017-04-28 v2.30 add io_iter_split_step, 一步步取文件，在遇到大量文件的时候，可以指定步长取文件，比如 10000 一次
 
 from __future__ import with_statement
 import os
@@ -322,6 +323,42 @@ def io_line_is_hash(line):
     return (re.match(u"[a-fA-F\d]{64}", line) or
             re.match(u"[a-fA-F\d]{40}", line) or
             re.match(u"[a-fA-F\d]{32}", line))
+
+
+def io_iter_split_step(data, split_unit_count):
+    '''
+    :param data:  must be isinstance(data, collections.Iterable):
+    :param split_unit_count: 
+    :return:  iter(tuple)
+
+    def test_io_split_step():
+        print (list(io_iter_split_step([1,2],5)))
+        print (list(io_iter_split_step([1,2,3,4,5,6,7],4)))
+        print (list(io_iter_split_step([1,2,3,4,5,6,7],3)))
+
+    [(1, 2)]
+    [(1, 2, 3, 4), (5, 6, 7)]
+    [(1, 2, 3), (4, 5, 6), (7,)]
+
+    '''
+    a = iter(data)
+    while True:
+        r = []
+        for _ in range(0, split_unit_count):
+            try:
+                e = next(a)
+                r.append(e)
+            except StopIteration:
+                if r:
+                    yield tuple(r)
+                    r = []
+                else:
+                    raise StopIteration
+        if r:
+            yield tuple(r)
+            r = []
+
+
 '''
 end
 '''
