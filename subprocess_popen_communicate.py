@@ -1,6 +1,7 @@
 ﻿# coding=utf-8
 from __future__ import unicode_literals
 
+import os
 
 def amr2avi():
     '''
@@ -10,8 +11,12 @@ def amr2avi():
 
         2. subprocess.Popen, shell 参数:
             shell = False (default) , 执行参数应该是 list, 封装为 [<待执行二进制>, <arg0>,<arg1>,...]
+                    更加 Pythonic 的使用方式，对执行参数更好控制
             shell = True, 执行参数可以是 str, 可以传递 '{} {} {}'.format(<待执行二进制>, <arg0>,<arg1>)
-
+                把整个字符串直接在 shell 执行，容易被利用
+            
+        3. 执行参数中 escape 相关: pipes.quote() 
+                
     :return:
     '''
     import subprocess
