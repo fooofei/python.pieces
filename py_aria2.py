@@ -60,17 +60,20 @@ class PyAria2(object):
 
         if proxy:
             aria2c_args.extend(u'--proxy={0}'.format(proxy))
-        p = subprocess.Popen(aria2c_args, shell=False)
-        try:
-            p.wait()
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            print(e)
-            # 别在这里删除这个文件
-            # Windows Error 32 另一个程序正在使用此文件，进程无法访问。
-            # if os.path.exists(path_inputfile):
-            #    os.remove(path_inputfile)
+
+        with open(os.devnull) as devnull:
+            p = subprocess.Popen(aria2c_args, shell=False,
+                                 stdout=devnull)
+            try:
+                p.wait()
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(e)
+                # 别在这里删除这个文件
+                # Windows Error 32 另一个程序正在使用此文件，进程无法访问。
+                # if os.path.exists(path_inputfile):
+                #    os.remove(path_inputfile)
 
 
     def write_uri_to_file(self, uris):
