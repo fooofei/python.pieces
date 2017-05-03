@@ -59,7 +59,7 @@ class PyAria2(object):
         ]
 
         if proxy:
-            aria2c_args.extend(u'--proxy={0}'.format(proxy))
+            aria2c_args.append(u'--proxy={0}'.format(proxy))
 
         with open(os.devnull) as devnull:
             p = subprocess.Popen(aria2c_args, shell=False,
