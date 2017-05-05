@@ -115,19 +115,18 @@ def _threading_thread_framework(target,args):
             if th.is_alive():
                 is_all_thread_exit = False
 
-def much_io(arg):
-    much_io_read(much_io_write(arg))
+
 
 def profile_threading_thread():
 
     t = Profile(profile_threading_thread.__name__)
 
-    #t.execute('cpu',_threading_thread_framework,target=much_cpu,args=(None,))
+    t.execute('cpu',_threading_thread_framework,target=much_cpu,args=(None,))
 
-    # f = lambda a: much_io_read(much_io_write(None))
-    t.execute('io',_threading_thread_framework,target=much_io,args=(None,))
+    f = lambda a: much_io_read(much_io_write(None))
+    t.execute('io',_threading_thread_framework,target=f,args=(None,))
 
-    #t.execute('net',_threading_thread_framework,target=much_net,args=(None,))
+    t.execute('net',_threading_thread_framework,target=much_net,args=(None,))
 
 
 def _multiprocessing_process_framework(target,args):
