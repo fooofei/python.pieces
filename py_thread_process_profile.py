@@ -190,17 +190,26 @@ def entry():
     profile_python_c_threadpool()
 
 def _get_obj():
+    '''
+    only use by my self    
+    '''
     from libexportqex import QexScanner
     scan = QexScanner(qex_save_dir=r'')
     scan.set_config_use_local_qvm()
     return scan
 
 def _get_data():
+    '''
+    only use by my self    
+    '''
     import io_in_out
     p=r'samples'
     return io_in_out.io_iter_files_from_arg([p])
 
 def _thread_func(obj,data):
+    '''
+    only use by my self    
+    '''
     obj.scan_path_w(data)
 
 def map_stub(f,d):
@@ -208,12 +217,18 @@ def map_stub(f,d):
         f(data=e)
 
 def profile_python_c_line():
+    '''
+    only use by myself
+    '''
     from functools import partial
     f = partial(_thread_func,obj=_get_obj())
     t = Profile(profile_python_c_line.__name__)
     t.execute('io',map_stub,f,_get_data(),execute_count=1)
 
 def profile_python_c_threadpool():
+    '''
+    only use by my self    
+    '''
     import io_in_out
 
     t = Profile(profile_python_c_threadpool.__name__)
