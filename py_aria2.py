@@ -82,7 +82,7 @@ class PyAria2(object):
         :return:
         '''
         import tempfile
-        fd, temp_file = tempfile.mkstemp(prefix='aria2c_')
+        fd, temp_file = tempfile.mkstemp(prefix=u'aria2c_')
         with open(temp_file, 'w') as f:
             for uri, fullpath in uris:
                 if not uri:
