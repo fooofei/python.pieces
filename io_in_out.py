@@ -403,6 +403,84 @@ def io_iter_split_step(data, split_unit_count):
             raise StopIteration
 
 
+def io_sequence_function(initial,function_sequence):
+    '''
+    :param initial: 
+    :param function_sequence: list of Functions
+    :return: the last function result
+    
+    equivalent :
+        def foo(initial):
+            initial = function_sequence[0](initial)
+            initial = function_sequence[1](initial)
+            initial = function_sequence[2](initial)
+            initial = function_sequence[...](initial)
+            return initial
+    
+    Usage:
+    
+        def f1(x):
+            print ('call f1')
+            if x >1 :
+                return int(x)+1
+            return None
+    
+    
+        def f2(x):
+            print ('call f2')
+            if x >5 :
+                return x+10
+            return None
+        
+        def f3(x):
+            print ('call f3')
+            if x > 10:
+                return x+100
+            return None
+    
+        
+        # _fn = lambda x,y : y(x) if x else None  # 不符合条件的 x 没有使用 y 调用会导致后面的函数无法调用到
+        如以下测试结果
+        fs = [f1,f2,f3]
+        print (io_sequence_function(0,fs)) 
+        None
+        
+        print (io_sequence_function(1,fs))
+        call f1
+        None
+        
+        print (io_sequence_function(7,fs))
+        call f1
+        call f2
+        call f3
+        118
+        
+        使用 _fn = lambda x,y : y(x) 运行结果：
+        fs = [f1,f2,f3]
+        print (io_sequence_function(0,fs)) 
+        call f1
+        call f2
+        call f3
+        None
+                
+        print (io_sequence_function(1,fs))
+        call f1
+        call f2
+        call f3
+        None
+                
+        print (io_sequence_function(7,fs))
+        call f1
+        call f2
+        call f3
+        118
+        
+    '''
+    _fn = lambda x,y : y(x)
+    fs = [initial]
+    fs.extend(function_sequence)
+    return reduce(_fn,fs)
+
 '''
 end
 '''
