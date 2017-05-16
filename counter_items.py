@@ -45,10 +45,27 @@ def counter_update_items():
     [('a', 11), ('c', 1), ('b', 4)]
     '''
 
+def counter_update_items2():
+    from collections import Counter
+
+    b = Counter()
+
+    b.update({'a':'4'})
+    b.update({'a':'7'})
+    # b.update({'b':'1'}) # error
+
+    print (b.items())
+
+    '''
+    [('a', '47')]
+    
+    '''
+
 def entry():
     counter_list()
     counter_list2()
     counter_update_items()
+    counter_update_items2()
 
 if __name__ == '__main__':
     entry()
