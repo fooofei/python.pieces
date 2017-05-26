@@ -94,12 +94,34 @@ def counter_list_old_way():
     print (b.items())
 
 
+def sum_all_item_count():
+    from collections import Counter
+    a = ['a', 'a', 'b', 'b',
+         'c', 'c', 'c']
+
+    b = Counter(a)
+
+    # b.elements() is itertools.chain object
+    '''
+    itertools.chain(*iterables)
+    # 把元素再拆分的意思
+    def chain(*iterables):
+        # chain('ABC', 'DEF') --> A B C D E F
+        for it in iterables:
+            for element in it:
+                yield element
+    '''
+
+    print (sum(1 for _ in b.elements()))
+
+
 def entry():
     counter_list()
     counter_list2()
     counter_update_items()
     counter_update_items2()
     counter_list_old_way()
+    sum_all_item_count()
 
 if __name__ == '__main__':
     entry()
