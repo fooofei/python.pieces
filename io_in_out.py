@@ -1,4 +1,4 @@
-﻿# -*- coding: UTF-8 -*-
+# -*- coding: UTF-8 -*-
 
 
 '''
@@ -26,8 +26,12 @@ scandir.walk  benchmark :
 # 2017-02-22 v2.00 修复其他国语言编码异常
 # 2017-02-23 v2.10 add io map
 # 2017-03-14 v2.20 io_out_arg 增加参数
-# 2017-04-28 v2.30 add io_iter_split_step, 一步步取文件，在遇到大量文件的时候，可以指定步长取文件，比如 10000 一次
-# 2017-05-02 v2.30 add io_path_format
+# 2017-04-28 v2.30 add io_iter_split_step(), 一步步取文件，在遇到大量文件的时候，可以指定步长取文件，比如 10000 一次
+# 2017-05-02 v2.30 add io_path_format()
+# 2017-05-16 v2.40 add io_is_process_run_in_visual_studio()
+# 2017-05-16 v2.50 add io_iter_split_step_pre()
+# 2017-05-30 v2.60 add __all__
+
 
 from __future__ import with_statement
 import os
@@ -37,6 +41,39 @@ try:
     from scandir import walk as local_walk
 except ImportError:
     from os import walk as local_walk
+
+__all__ = [
+    'io_in_arg',
+    'io_bytes_arg',
+    'io_iter_files_from_arg',
+    'io_iter_root_files_from_arg',
+    'io_out_arg',
+    'io_sys_stdout',
+    'io_sys_stderr',
+    'io_print',
+    'io_stderr_print',
+    'io_files_from_arg',
+    'io_is_path_valid',
+    'io_path_format',
+    'io_thread_map',
+    'io_thread_map_one_ins',
+    'dict_item_getter',
+    'io_directory_merge',
+    'io_hash_memory',
+    'io_hash_stream',
+    'io_hash_fullpath',
+    'io_line_is_hash',
+    'io_simple_check_md5',
+    'io_simple_check_hash',
+    'io_simple_check_sha256',
+    'io_simple_check_sha1',
+    'io_iter_split_step',
+    'io_sequence_function',
+    'io_is_process_run_in_visual_studio',
+    'io_from_timestamp',
+    'io_raw_input',
+    'pyver',
+]
 
 
 pyver = sys.version_info[0]  # major
@@ -400,8 +437,18 @@ def io_iter_split_step(data, split_unit_count):
         if r:
             yield (r)
         else:
-            raise StopIteration
+            break
 
+
+def io_iter_split_step_pre(data, split_unit_count):
+    import itertools
+    tasksi = iter(data)
+    pre = itertools.islice(tasksi, 300)
+    pre = tuple(pre)
+    if pre:
+        yield pre
+    for i in io_iter_split_step(tasksi, split_unit_count):
+        yield i
 
 def io_sequence_function(initial,function_sequence):
     '''
@@ -480,6 +527,30 @@ def io_sequence_function(initial,function_sequence):
     fs = [initial]
     fs.extend(function_sequence)
     return reduce(_fn,fs)
+
+def io_is_process_run_in_visual_studio():
+    import psutil
+    p = psutil.Process().parent()
+    return u'devenv.exe' == p.name() and u'Microsoft Visual Studio' in p.exe()
+
+
+def io_from_timestamp(ts):
+    '''
+    timestamp int to datetime
+	1496121889734 -> 2017-05-30 13:24:49.734000
+    '''
+    import datetime
+
+    ts_str = str(ts)
+    if not ts_str.isdigit():
+        raise ValueError('timestamp must be digit')
+    if len(ts_str) == 10:
+        ts = int(ts)
+    elif len(ts_str) == 13:
+        ts = float(int(ts))/1000
+    elif not (ts == 0):
+        raise ValueError('unexcept timestamp format {0}'.format(ts_str))
+    return datetime.datetime.fromtimestamp(ts)
 
 '''
 end
