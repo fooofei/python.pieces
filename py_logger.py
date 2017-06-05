@@ -5,18 +5,21 @@ import logging
 
 
 def get_logger_1():
-    FORMAT = u'%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
-
-    formatter = logging.Formatter(FORMAT)
+    FORMAT = u'%(asctime)s %(module)s %(funcName)s %(levelname)-8s %(message)s'
+    datefmt = u'%Y/%m/%d %H:%M:%S'
+    formatter = logging.Formatter(FORMAT,datefmt=datefmt)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    log = logging.getLogger(os.path.basename(os.path.realpath(__file__)))
+    log = logging.getLogger(__name__)
     log.addHandler(handler)
     log.setLevel(logging.DEBUG)
     return log
 
 
 def get_logger_2():
+    '''
+    other module logging also output
+    '''
     FORMAT = u'%(asctime)s %(module)s %(funcName)s %(levelname)-8s %(message)s'
     datefmt = u'%Y/%m/%d %H:%M:%S'
     # >= level will be output
