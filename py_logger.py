@@ -5,7 +5,7 @@ import logging
 
 
 def get_logger_1():
-    FORMAT = u'%(asctime)s %(module)s %(funcName)s %(levelname)-8s %(message)s'
+    FORMAT = u'%(asctime)s module=%(module)s func=%(funcName)s %(levelname)-8s %(message)s'
     datefmt = u'%Y/%m/%d %H:%M:%S'
     formatter = logging.Formatter(FORMAT,datefmt=datefmt)
     handler = logging.StreamHandler()
@@ -20,7 +20,7 @@ def get_logger_2():
     '''
     other module logging also output
     '''
-    FORMAT = u'%(asctime)s %(module)s %(funcName)s %(levelname)-8s %(message)s'
+    FORMAT = u'%(asctime)s module=%(module)s func=%(funcName)s %(levelname)-8s %(message)s'
     datefmt = u'%Y/%m/%d %H:%M:%S'
     # >= level will be output
     logging.basicConfig(format=FORMAT,level=logging.DEBUG,datefmt=datefmt)
