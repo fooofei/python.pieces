@@ -85,8 +85,7 @@ class PyAria2(object):
         fd, temp_file = tempfile.mkstemp(prefix=u'aria2c_')
         with open(temp_file, 'w') as f:
             for uri, fullpath in uris:
-                if not uri:
-                    break
+                if not (uri and fullpath): continue
                 f.write(u'{}\n'.format(uri).encode(u'utf-8'))
                 d = os.path.dirname(fullpath)
                 n = os.path.basename(fullpath)
