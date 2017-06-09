@@ -73,6 +73,10 @@ __all__ = [
     'io_from_timestamp',
     'io_raw_input',
     'pyver',
+    'io_in_code',
+    'io_iter_split_step_pre',
+    'io_out_code',
+    'io_binary_type',
 ]
 
 
@@ -80,18 +84,22 @@ pyver = sys.version_info[0]  # major
 if pyver >= 3:
     io_in_code = str # io 读取时应该转换成为的目标编码
     io_out_code = bytes
+    io_binary_type = bytes
+    io_text_type = str
     io_raw_input = input
 else:
     io_in_code = unicode
     io_out_code = str
     io_raw_input = raw_input
-io_str_codes = (io_in_code, io_out_code)
+    io_binary_type = str
+    io_text_type = unicode
+io_str_codes = (io_text_type, io_binary_type)
 
 
 def io_in_arg(arg):
     if not arg:
         return arg
-    if isinstance(arg, io_in_code):
+    if isinstance(arg, io_text_type):
         return arg
     codes = ['utf-8', 'gbk']
     for c in codes:
@@ -111,7 +119,7 @@ def io_bytes_arg(arg):
     '''
     if not arg:
         return arg
-    if isinstance(arg, io_in_code):
+    if isinstance(arg, io_text_type):
         codes = ['utf-8', 'gbk']
         for c in codes:
             try:
@@ -434,19 +442,19 @@ def io_iter_split_step(data, split_unit_count):
     while True:
         # slice return iterable
         r = tuple(islice(i,split_unit_count))
-        if r:
-            yield (r)
-        else:
-            break
+        if not r: break
+        yield (r)
 
 
 def io_iter_split_step_pre(data, split_unit_count):
+    '''
+    return 300 items at first, for test small data
+    '''
     import itertools
     tasksi = iter(data)
     pre = itertools.islice(tasksi, 300)
     pre = tuple(pre)
-    if pre:
-        yield pre
+    if pre: yield pre
     for i in io_iter_split_step(tasksi, split_unit_count):
         yield i
 
