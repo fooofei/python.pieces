@@ -87,12 +87,14 @@ if pyver >= 3:
     io_binary_type = bytes
     io_text_type = str
     io_raw_input = input
+    io_integer_types = (int)
 else:
     io_in_code = unicode
     io_out_code = str
     io_raw_input = raw_input
     io_binary_type = str
     io_text_type = unicode
+    io_integer_types = (int, long)
 io_str_codes = (io_text_type, io_binary_type)
 
 
