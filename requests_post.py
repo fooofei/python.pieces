@@ -4,6 +4,11 @@
 
 http requests post 的使用
 
+
+post 几种 Content-Type 与之对应 requests 使用方式
+    application/x-www-form-urlencoded    post( data= )
+
+    multipart/form-data; post( files=)
 '''
 
 import requests
