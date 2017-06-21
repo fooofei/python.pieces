@@ -563,6 +563,18 @@ class MyTestCase(unittest.TestCase):
         # error, must once one column
         # chunk.insert(0, cs, 'default_value')
 
+    def test_get_a_column_drop_duplcaties(self):
+
+        chunk = self._basic_read()
+
+        a = chunk[chunk.keys().tolist()[0]].drop_duplicates().tolist()
+        a = set(a)
+
+        a_check = set([ row[0] for row in g_data_matrix ])
+
+        self.assertEqual(a, a_check)
+
+
 
 if __name__ == '__main__':
     unittest.main()
