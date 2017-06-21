@@ -5,448 +5,564 @@ import sys
 
 curpath = os.path.dirname(os.path.realpath(__file__))
 
-data = '''\
-111\taaa
-111\tbbb
-222\tccc
-333\tddd
-'''
+g_data_matrix = [
+    [111, 'aaa', 'nnn'],
+    [111, 'bbb', 'mmm'],
+    [222, 'ccc', 'xxx'],
+    [333, 'ddd', 'yyy'],
+]
 
-column_names = ['column_0', 'column_1']
+
+def matrix_2_bytes(matrix):
+    return b'\n'.join([b'\t'.join(map(bytes, row)) for row in matrix])
+
+
+g_data = matrix_2_bytes(g_data_matrix)
+
+g_column_names = [u'column_0', u'column_1', u'column_2']
 
 import pandas as pd
-from cStringIO import StringIO
+from io import BytesIO
+
+import unittest
 
 
-def make_gzip():
-    import gzip
+class MyTestCase(unittest.TestCase):
+    def _make_gzip(self):
+        import gzip
+        out_stream = BytesIO()
+        with gzip.GzipFile(fileobj=out_stream, mode='wb') as f:
+            f.write(g_data)
+        return BytesIO(out_stream.getvalue())
 
-    out_stream = StringIO()
+    def _dataframe_equal_matrix(self, chunk, matrix, maxtrix_column_names):
 
-    with gzip.GzipFile(fileobj=out_stream, mode='wb') as f:
-        f.write(data)
-    return StringIO(out_stream.getvalue())
+        self.assertEqual(maxtrix_column_names, chunk.columns.values.tolist())
 
+        rows_count = len(matrix)
+        self.assertEqual(rows_count, len(chunk))
 
-def creat_base():
-    '''
-   column_0 column_1
-0       111      aaa
-1       111      bbb
-2       222      ccc
-3       333      ddd
+        # check columns
+        for col_idx in range(len(matrix[0])):
+            col = [row[col_idx] for row in matrix]
+            v = chunk[maxtrix_column_names[col_idx]].tolist()
+            self.assertEqual(col, v)
 
-    :return: 
-    '''
-    stream = StringIO(data)
+        # check rows
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        rows_iter = chunk.iterrows()
+        for row_idx, row in enumerate(matrix):
+            v = rows_iter.next()
+            # row_idx 不一定是连续的 如果被 drop 过，就不是连续的
+            # self.assertEqual(row_idx, v[0])
+            self.assertEqual(row, v[1].tolist())
 
-    return chunk
+    def _basic_read(self):
+        return pd.read_csv(BytesIO(g_data),
+                           names=g_column_names,
+                           header=None,
+                           sep='\t')
 
+    def test_basic(self):
 
-def read_from_gzip():
-    '''
-   column_0 column_1
-0       111      aaa
-1       111      bbb
-2       222      ccc
-3       333      ddd
-    '''
-    chunk = pd.read_csv(make_gzip(),
-                        names=column_names,
-                        header=None,
-                        sep='\t',
-                        compression='gzip',  # default 'infer' 如果是文件路径，从文件后缀推断
-                        # engine='python',  #  python or c
-                        )
-    return chunk
+        chunk = self._basic_read()
 
+        self._dataframe_equal_matrix(chunk, g_data_matrix, g_column_names)
 
-def drop_duplicates():
-    '''
-   column_0 column_1
-0       111      aaa
-2       222      ccc
-3       333      ddd
-    :return: 
-    '''
+    def test_read_as_iter(self):
+        chunk1 = pd.read_csv(BytesIO(g_data),
+                             names=g_column_names,
+                             header=None,
+                             sep='\t',
+                             iterator=True,
+                             chunksize=10,
+                             engine='c')
+        l = list(chunk1)
+        self.assertEqual(1, len(l))
+        self._dataframe_equal_matrix(l[0], g_data_matrix, g_column_names)
 
-    stream = StringIO(data)
+        chunk2 = pd.read_csv(BytesIO(g_data)
+                             , names=g_column_names
+                             , header=None
+                             , sep='\t'
+                             , iterator=True
+                             , chunksize=1
+                             # ,engine='c' # have or not is all work
+                             )
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        l2 = list(chunk2)
 
-    chunk2 = chunk.drop_duplicates(column_names[0])
+        self.assertEqual(4, len(l2))
 
-    return chunk2
+        self._dataframe_equal_matrix(
+            l2[0], [[111, 'aaa', 'nnn']], g_column_names
+        )
 
+    def test_read_from_gzip(self):
+        chunk = pd.read_csv(self._make_gzip(),
+                            names=g_column_names,
+                            header=None,
+                            sep='\t',
+                            compression='gzip',  # default 'infer' 如果是文件路径，从文件后缀推断
+                            # engine='python',  #  python or c
+                            )
 
-def drop_nan():
-    local_data = '''\
-111\taaa
-222\t
-333\tccc
-'''
+        self._dataframe_equal_matrix(chunk, g_data_matrix, g_column_names)
 
-    stream = StringIO(local_data)
+    def test_drop_duplicates(self):
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        chunk = self._basic_read()
 
-    '''
-       column_0 column_1
-0       111      aaa
-1       222      NaN
-2       333      ccc
-    :return: 
-    '''
+        # 按照某一列 去重复
+        chunk2 = chunk.drop_duplicates(g_column_names[0])
 
-    chunk2 = chunk[pd.notnull(chunk[column_names[1]])]
+        self._dataframe_equal_matrix(
+            chunk2,
+            [
+                [111, 'aaa', 'nnn'],
+                [222, 'ccc', 'xxx'],
+                [333, 'ddd', 'yyy'],
+            ], g_column_names
+        )
 
-    '''
-   column_0 column_1
-0       111      aaa
-2       333      ccc
-    '''
+    def test_drop_nan(self):
+        import math
+        local_data = b'''\
+        111\taaa\t
+        222\t\tmmm
+        333\tccc\txxx
+        '''
+        chunk = pd.read_csv(BytesIO(local_data),
+                            names=g_column_names,
+                            header=None,
+                            sep='\t')
 
-    return chunk2
+        chunk2 = chunk[pd.notnull(chunk[g_column_names[1]])]
 
+        # there is also have Nan in column[2]
+        chunk2 = chunk2.fillna('')
 
-def drop_columns():
-    '''
-       column_0
-0       111
-1       111
-2       222
-3       333
-    :return: 
-    '''
-    stream = StringIO(data)
+        self._dataframe_equal_matrix(
+            chunk2,
+            [
+                [111, 'aaa', ''],
+                [333, 'ccc', 'xxx']
+            ], g_column_names
+        )
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        chunk3 = chunk[pd.notnull(chunk[g_column_names[2]])]
+        chunk3 = chunk3.fillna('')
 
-    chunk2 = chunk.drop(chunk.columns[[1]], axis=1)
+        self._dataframe_equal_matrix(
+            chunk3,
+            [
+                [222, '', 'mmm'],
+                [333, 'ccc', 'xxx'],
+            ], g_column_names
+        )
 
-    return chunk2
+    def test_skip_black_lines(self):
 
+        '''
+        空 item 用 ‘’, na_values=['']  没跳过，不起作用
 
-def concat_with_same_columns():
-    '''
-       column_0 column_1
-0       111      aaa
-1       111      bbb
-2       222      ccc
-3       333      ddd
-0       111      aaa
-1       111      bbb
-2       222      ccc
-3       333      ddd
-    :return: 
-    '''
-    stream = StringIO(data)
-
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
-
-    chunk2 = pd.concat([chunk, chunk])
-
-    return chunk2
-
-
-def concat_with_different_columns():
-    '''
-       column_0  column_00 column_1 column_11
-0     111.0        NaN      aaa       NaN
-1     111.0        NaN      bbb       NaN
-2     222.0        NaN      ccc       NaN
-3     333.0        NaN      ddd       NaN
-0       NaN      111.0      NaN       aaa
-1       NaN      111.0      NaN       bbb
-2       NaN      222.0      NaN       ccc
-3       NaN      333.0      NaN       ddd
-    :return: 
-    '''
-    stream = StringIO(data)
-
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
-
-    stream.seek(0)
-    chunk1 = pd.read_csv(stream,
-                         names=['column_00', 'column_11'],
-                         header=None,
-                         sep='\t')
-
-    chunk2 = pd.concat([chunk, chunk1])
-
-    return chunk2
-
-
-def sort_by():
-    local_data = '''\
-111\tccc
-444\taaa
-333\tbbb
-'''
-
-    stream = StringIO(local_data)
-
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
-
-    chunk1 = chunk.sort_values(by=[column_names[0]])
-    '''
-       column_0 column_1
-0       111      ccc
-2       333      bbb
-1       444      aaa
-    '''
-
-    chunk2 = chunk.sort_values(by=[column_names[1]])
-    '''
-       column_0 column_1
-1       444      aaa
-2       333      bbb
-0       111      ccc
-    '''
-    return chunk1
-
-
-def save_to_file():
-    stream = StringIO(data)
-
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
-
-    fullpath = os.path.join(curpath, 'test.bin')
-    if os.path.exists(fullpath):
-        os.remove(fullpath)
-    chunk.to_csv(fullpath,
-                 sep='\t',
-                 index=False,
-                 header=False,
-                 )
-
-    '''
-111	aaa
-111	bbb
-222	ccc
-333	ddd
-
-    '''
-
-    return 'save_to_file {}'.format(fullpath)
-
-
-def special_handle_columns_when_create():
-    '''
-    此函数演示在创建 dataframe 时特殊处理列
-    
-          column_0 column_1
-0  111_convert      aaa
-1  111_convert      bbb
-2  222_convert      ccc
-3  333_convert      ddd
-    :return: 
-    '''
-
-    def func_convert(text):
-        try:
-            return text + '_convert'
-        except AttributeError:
-            return text
-
-    stream = StringIO(data)
-
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t',
-                        converters={column_names[0]: func_convert},  # 指定这一列使用什么函数转换
-                        )
-
-    return chunk
-
-
-def to_list():
-    '''
-    [   {'column_1': 'aaa', 'column_0': 111}, 
-        {'column_1': 'bbb', 'column_0': 111}, 
-        {'column_1': 'ccc', 'column_0': 222}, 
-        {'column_1': 'ddd', 'column_0': 333}
+        默认 na 的值见 https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html
+        '''
+        matrix = [
+            [111, 'aaa', 'NULL'],  # NULL is Nan
+            [222, 'NULL', 'mmm'],
+            [''],
+            [333, 'ccc', 'xxx'],
         ]
-        
-    '''
 
-    def pandas_dataframe_to_list(df):
-        r = []
-        for k in df.itertuples():
-            e = {}
-            for n in df.columns.values:
-                e[n] = getattr(k, n)
-            r.append(e)
-        return r
+        local_data = matrix_2_bytes(matrix)
 
-    stream = StringIO(data)
+        self.assertEqual(len(matrix)
+                         , len(pd.read_csv(BytesIO(local_data),
+                                           names=g_column_names,
+                                           header=None,
+                                           sep='\t',
+                                           skip_blank_lines=False)))
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        self.assertEqual(len(matrix) - 1
+                         , len(pd.read_csv(BytesIO(local_data),
+                                           names=g_column_names,
+                                           header=None,
+                                           sep='\t',
+                                           skip_blank_lines=True)
+                               ))
 
-    return pandas_dataframe_to_list(chunk)
+    def test_drop_columns(self):
 
+        chunk = self._basic_read()
 
-def column_to_list():
-    '''
-    ['aaa', 'bbb', 'ccc', 'ddd']
-    :return: 
-    '''
-    stream = StringIO(data)
+        # give drop columns index's list
+        v = chunk.columns[[1]]  # type= pandas.indexes.base.Index
+        # axis : int or axis name
+        chunk2 = chunk.drop(v, axis=1)
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        names2 = g_column_names[:]
+        names2.pop(1)
 
-    return chunk[column_names[1]].tolist()
+        self._dataframe_equal_matrix(
+            chunk2,
+            [
+                [111, 'nnn'],
+                [111, 'mmm'],
+                [222, 'xxx'],
+                [333, 'yyy'],
+            ], names2
+        )
 
+        v = chunk.columns[[1, 2]]
 
-def read_column_names():
-    stream = StringIO(data)
+        chunk3 = chunk.drop(v, axis=1)
+        names3 = g_column_names[:]
+        names3.pop(2)
+        names3.pop(1)
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        self._dataframe_equal_matrix(
+            chunk3,
+            [
+                [111],
+                [111],
+                [222],
+                [333],
+            ], names3
+        )
 
-    # or  list(chunk)
-    return chunk.columns.values
+    def test_concat_with_same_columns(self):
 
+        chunk1 = self._basic_read()
 
-def only_read_column():
-    '''
-    该函数演示按列访问 DataFrame
-    :return: 
-    '''
-    stream = StringIO(data)
+        chunk2 = pd.concat([chunk1, chunk1])
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        matrix = g_data_matrix[:]
 
-    for e in chunk.iteritems():
-        print (e)
+        matrix.extend(matrix)
 
+        self._dataframe_equal_matrix(
+            chunk2,
+            matrix,
+            g_column_names
+        )
 
-def column_name_to_column_index():
-    '''
-    colum_name column_1 is index 1
-    :return: 
-    '''
-    stream = StringIO(data)
+    def test_concat_with_different_columns_same_column_names(self):
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        chunk1 = self._basic_read()
 
-    return 'colum_name {} is index {}'.format(
-        column_names[1],
-        chunk.columns.get_loc(column_names[1])
-    )
+        self._dataframe_equal_matrix(
+            chunk1, g_data_matrix, g_column_names
+        )
 
+        use_cols = g_column_names[:]
+        use_cols.pop(1)
+        chunk2 = pd.read_csv(BytesIO(g_data),
+                             names=g_column_names,
+                             header=None,
+                             sep='\t',
+                             usecols=use_cols)
 
-def update_specific_value():
-    '''
-       column_0 column_1
-0       111      aaa
-1       111      eee
-2       222      ccc
-3       333      ddd
-    :return: 
-    '''
-    stream = StringIO(data)
+        self._dataframe_equal_matrix(
+            chunk2,
+            [
+                [111, 'nnn'],
+                [111, 'mmm'],
+                [222, 'xxx'],
+                [333, 'yyy'],
+            ]
+            , use_cols
+        )
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        chunk3 = pd.concat([chunk1, chunk2])
 
-    for index, row in chunk.iterrows():
-        if row[column_names[1]] == 'bbb':
-            chunk.set_value(index, column_names[1], 'eee')
+        matrix = g_data_matrix[:]
+        matrix.extend(
+            [
+                [111, '', 'nnn'],
+                [111, '', 'mmm'],
+                [222, '', 'xxx'],
+                [333, '', 'yyy'],
+            ]
+        )
 
-    return chunk
+        chunk3 = chunk3.fillna('')
 
+        self._dataframe_equal_matrix(
+            chunk3, matrix, g_column_names  # The longest one
+        )
 
-def insert_new_column():
-    '''
-       column_0 column_1 column_new_insert
-0       111      aaa     default_value
-1       111      bbb     default_value
-2       222      ccc     default_value
-3       333      ddd     default_value
-    :return: 
-    '''
+    def test_concat_with_different_columns_different_column_names(self):
 
-    stream = StringIO(data)
+        chunk1 = self._basic_read()
 
-    chunk = pd.read_csv(stream,
-                        names=column_names,
-                        header=None,
-                        sep='\t')
+        self._dataframe_equal_matrix(
+            chunk1, g_data_matrix, g_column_names
+        )
 
-    names = chunk.columns.values
-    last_name_index = chunk.columns.get_loc(names[-1])
-    chunk.insert(last_name_index + 1, 'column_new_insert', 'default_value')
+        matrix2 = [
+            [666, 'zzz'],
+            [888, 'hhh'],
+            [999, 'ggg'],
+        ]
+        names2 = ['column_00', 'column_11']
+        chunk2 = pd.read_csv(BytesIO(matrix_2_bytes(matrix2)),
+                             names=names2,
+                             header=None,
+                             sep='\t')
 
-    return chunk
+        self._dataframe_equal_matrix(
+            chunk2, matrix2, names2
+        )
 
+        chunk3 = pd.concat([chunk1, chunk2])
 
-def entry():
-    funcs = [
-        creat_base,
-        read_from_gzip,
-        drop_duplicates,
-        drop_nan,
-        drop_columns,
-        concat_with_same_columns,
-        concat_with_different_columns,
-        sort_by,
-        # save_to_file,
-        special_handle_columns_when_create,
-        read_column_names,
-        column_to_list,
-        to_list,
-        column_name_to_column_index,
-        update_specific_value,
-        insert_new_column,
-    ]
+        # column name 会被排序
 
-    for e in funcs:
-        print (e())
+        names3 = ['column_0', 'column_00', 'column_1', 'column_11', 'column_2']
+
+        matrix3 = [
+            [111, '', 'aaa', '', 'nnn'],
+            [111, '', 'bbb', '', 'mmm'],
+            [222, '', 'ccc', '', 'xxx'],
+            [333, '', 'ddd', '', 'yyy'],
+            ['', 666, '', 'zzz', ''],
+            ['', 888, '', 'hhh', ''],
+            ['', 999, '', 'ggg', ''],
+        ]
+
+        chunk3 = chunk3.fillna('')
+
+        self._dataframe_equal_matrix(
+            chunk3, matrix3, names3
+        )
+
+    def test_sort_by(self):
+
+        matrix = [
+            [111, 'ccc'],
+            [444, 'aaa'],
+            [333, 'bbb'],
+        ]
+        names = ['colum_0', 'column_1']
+
+        chunk = pd.read_csv(BytesIO(matrix_2_bytes(matrix)),
+                            names=names,
+                            header=None,
+                            sep='\t')
+
+        self._dataframe_equal_matrix(
+            chunk.sort_values(by=[names[0]])
+            , [
+                [111, 'ccc'],
+                [333, 'bbb'],
+                [444, 'aaa'],
+            ]
+            , names
+        )
+
+        self._dataframe_equal_matrix(
+            chunk.sort_values(by=[names[1]])
+            , [
+                [444, 'aaa'],
+                [333, 'bbb'],
+                [111, 'ccc'],
+            ]
+            , names
+        )
+
+    def test_save_to_file(self):
+
+        chunk = self._basic_read()
+
+        fullpath = os.path.join(curpath, 'test.bin')
+        if os.path.exists(fullpath):
+            os.remove(fullpath)
+
+        chunk.to_csv(fullpath, sep='\t'
+                     , index=False  # must
+                     , header=False  # must
+                     )
+
+        chunk_check = pd.read_csv(fullpath,
+                                  names=g_column_names,
+                                  header=None,
+                                  sep='\t')
+
+        self._dataframe_equal_matrix(chunk, g_data_matrix, g_column_names)
+        self._dataframe_equal_matrix(chunk_check, g_data_matrix, g_column_names)
+
+        # rb read mode contains \r\n
+        # r read mode contains \n
+        with open(fullpath, 'r') as fr:
+            c = fr.read()
+            c = c.rstrip()
+            self.assertEqual(g_data, c)
+
+        os.remove(fullpath)
+
+    def test_special_handle_columns_when_create(self):
+        def _func_convert(text):
+            try:
+                return text + '_convert'
+            except AttributeError:
+                return text
+
+        matrix = [
+            ['nnn', 'aaa'],
+            ['mmm', 'bbb'],
+            ['yyy', 'ccc'],
+        ]
+
+        names = g_column_names[:]
+        names.pop()
+
+        chunk = pd.read_csv(BytesIO(matrix_2_bytes(matrix)),
+                            names=names,
+                            header=None,
+                            sep='\t')
+
+        self._dataframe_equal_matrix(chunk, matrix, names)
+
+        chunk2 = pd.read_csv(BytesIO(matrix_2_bytes(matrix))
+                             , names=names
+                             , header=None
+                             , sep='\t'
+                             , converters={g_column_names[0]: _func_convert},  # 指定这一列使用什么函数转换
+                             )
+
+        self._dataframe_equal_matrix(chunk2, [
+            ['nnn_convert', 'aaa'],
+            ['mmm_convert', 'bbb'],
+            ['yyy_convert', 'ccc'],
+        ], names)
+
+    def test_to_dict_list(self):
+
+        chunk = self._basic_read()
+
+        for k in chunk.iterrows():
+            pass  # (row_index, row_Series)
+
+        for k in chunk.iteritems():
+            pass  # (column_name, column_Series)
+
+        # type= pandas.indexes.base.Index
+        for k in chunk.keys():
+            pass  # column name
+
+        for k in chunk.itertuples():
+            pass  # type= pandas.core.frame.Pandas,
+            # print (getattr(k,g_column_names[0]))   one row , with the column name attr, so result is [111, 111, 222, 333]
+
+        self.assertEqual(chunk.keys().tolist(), chunk.columns.values.tolist())
+
+        names = chunk.keys().tolist()
+
+        r = [{k1: v1 for k1, v1 in zip(names, k[1].tolist())} for k in chunk.iterrows()]
+
+        r_check = [{k1: v1 for k1, v1 in zip(g_column_names, row)} for row in g_data_matrix]
+
+        self.assertEqual(r, r_check)
+
+    def test_listed_a_column(self):
+
+        chunk = self._basic_read()
+
+        for col_idx in range(len(g_data_matrix[0])):
+            self.assertEqual(
+                [row[col_idx] for row in g_data_matrix]
+                , chunk[g_column_names[col_idx]].tolist()
+            )
+
+    def test_get_column_names(self):
+
+        chunk = self._basic_read()
+
+        # recommended
+        way1 = chunk.keys().tolist()
+        way2 = chunk.columns.values.tolist()
+        self.assertEqual(way1, way2)
+
+    def test_column_name_to_column_index(self):
+        chunk = self._basic_read()
+
+        # type = int
+        idx = chunk.columns.get_loc(g_column_names[1])
+
+        for idx, name in enumerate(g_column_names):
+            self.assertEqual(idx, chunk.columns.get_loc(name))
+
+    def test_update_specific_item_value(self):
+
+        chunk = self._basic_read()
+
+        for idx, row in chunk.iterrows():
+            if row[g_column_names[1]] == 'bbb':
+                chunk.set_value(idx, g_column_names[1], 'eee')
+
+        self._dataframe_equal_matrix(
+            chunk
+            , [
+                [111, 'aaa', 'nnn'],
+                [111, 'eee', 'mmm'],
+                [222, 'ccc', 'xxx'],
+                [333, 'ddd', 'yyy'],
+            ]
+            , g_column_names
+        )
+
+    def test_insert_new_column(self):
+
+        chunk = self._basic_read()
+
+        column_names = chunk.keys().tolist()
+        last_column_idx = chunk.columns.get_loc(column_names[-1])
+
+        # loc : int
+        #    Must have 0 <= loc <= len(columns)
+        chunk.insert(last_column_idx + 1, 'column_new_insert', 'default_value')
+
+        self._dataframe_equal_matrix(chunk
+                                     , [
+                                         [111, 'aaa', 'nnn', 'default_value'],
+                                         [111, 'bbb', 'mmm', 'default_value'],
+                                         [222, 'ccc', 'xxx', 'default_value'],
+                                         [333, 'ddd', 'yyy', 'default_value'],
+                                     ]
+                                     , column_names + ['column_new_insert']
+                                     )
+
+    def test_insert_new_column_2(self):
+        chunk = self._basic_read()
+
+        column_names = chunk.keys().tolist()
+
+        # loc : int
+        #    Must have 0 <= loc <= len(columns)
+        chunk.insert(0, 'column_new_insert', 'default_value')
+        column_names.insert(0, 'column_new_insert')
+
+        self._dataframe_equal_matrix(chunk
+                                     , [
+                                         ['default_value', 111, 'aaa', 'nnn'],
+                                         ['default_value', 111, 'bbb', 'mmm'],
+                                         ['default_value', 222, 'ccc', 'xxx'],
+                                         ['default_value', 333, 'ddd', 'yyy'],
+                                     ]
+                                     , column_names
+                                     )
+
+    def test_insert_new_columns(self):
+        chunk = self._basic_read()
+
+        column_names = chunk.keys().tolist()
+
+        cs = ['column_new_insert_1', 'column_new_insert_2']
+
+        # error, must once one column
+        # chunk.insert(0, cs, 'default_value')
 
 
 if __name__ == '__main__':
-    entry()
+    unittest.main()
