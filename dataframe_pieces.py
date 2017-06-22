@@ -2,6 +2,12 @@
 
 import os
 import sys
+import pandas as pd
+import unittest
+import math
+
+from copy import deepcopy
+from io import BytesIO
 
 curpath = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,14 +27,10 @@ g_data = matrix_2_bytes(g_data_matrix)
 
 g_column_names = [u'column_0', u'column_1', u'column_2']
 
+
 # 注意 matrix = g_data_matrix[:] 是浅拷贝
 
-from copy import deepcopy
 
-import pandas as pd
-from io import BytesIO
-
-import unittest
 
 
 class MyTestCase(unittest.TestCase):
@@ -395,6 +397,7 @@ class MyTestCase(unittest.TestCase):
 
         self._dataframe_equal_matrix(chunk, g_data_matrix, g_column_names)
         self._dataframe_equal_matrix(chunk_check, g_data_matrix, g_column_names)
+        self.assertTrue(chunk.equals(chunk_check))
 
         # rb read mode contains \r\n
         # r read mode contains \n
@@ -402,6 +405,49 @@ class MyTestCase(unittest.TestCase):
             c = fr.read()
             c = c.rstrip()
             self.assertEqual(g_data, c)
+
+        os.remove(fullpath)
+
+    def test_nan_value_save_to_file(self):
+        '''
+        默认 na 的值见 https://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html
+
+        Nan 默认以空字符串写入文件
+        也可以用 .fillna() 改变这个默认值
+        '''
+        matrix = [
+            [111, 'aaa', 'N/A'],
+            [111, 'n/a', 'mmm'],
+            [222, '', 'xxx'],
+            [333, 'ddd', ''],
+        ]
+        column_names = [u'column_0', u'column_1', u'column_2']
+
+        chunk = pd.read_csv(BytesIO(matrix_2_bytes(matrix)),
+                            names=column_names,
+                            header=None,
+                            sep='\t')
+
+        self.assertTrue(math.isnan(chunk.get_value(0, column_names[2])))
+        self.assertEqual('n/a', chunk.get_value(1, column_names[1]))
+        self.assertTrue(math.isnan(chunk.get_value(2, column_names[1])))
+        self.assertTrue(math.isnan(chunk.get_value(3, column_names[2])))
+
+        fullpath = os.path.join(curpath, 'test_nan.bin')
+        if os.path.exists(fullpath):
+            os.remove(fullpath)
+
+        chunk.to_csv(fullpath, sep='\t'
+                     , index=False  # must
+                     , header=False  # must
+                     )
+
+        chunk_check = pd.read_csv(fullpath,
+                                  names=column_names,
+                                  header=None,
+                                  sep='\t')
+
+        self.assertTrue(chunk.equals(chunk_check))
 
         os.remove(fullpath)
 
