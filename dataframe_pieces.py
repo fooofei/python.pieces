@@ -21,6 +21,10 @@ g_data = matrix_2_bytes(g_data_matrix)
 
 g_column_names = [u'column_0', u'column_1', u'column_2']
 
+# 注意 matrix = g_data_matrix[:] 是浅拷贝
+
+from copy import deepcopy
+
 import pandas as pd
 from io import BytesIO
 
@@ -237,7 +241,7 @@ class MyTestCase(unittest.TestCase):
 
         chunk2 = pd.concat([chunk1, chunk1])
 
-        matrix = g_data_matrix[:]
+        matrix = deepcopy(g_data_matrix)
 
         matrix.extend(matrix)
 
@@ -276,7 +280,7 @@ class MyTestCase(unittest.TestCase):
 
         chunk3 = pd.concat([chunk1, chunk2])
 
-        matrix = g_data_matrix[:]
+        matrix = deepcopy(g_data_matrix)
         matrix.extend(
             [
                 [111, '', 'nnn'],
@@ -441,20 +445,6 @@ class MyTestCase(unittest.TestCase):
 
         chunk = self._basic_read()
 
-        for k in chunk.iterrows():
-            pass  # (row_index, row_Series)
-
-        for k in chunk.iteritems():
-            pass  # (column_name, column_Series)
-
-        # type= pandas.indexes.base.Index
-        for k in chunk.keys():
-            pass  # column name
-
-        for k in chunk.itertuples():
-            pass  # type= pandas.core.frame.Pandas,
-            # print (getattr(k,g_column_names[0]))   one row , with the column name attr, so result is [111, 111, 222, 333]
-
         self.assertEqual(chunk.keys().tolist(), chunk.columns.values.tolist())
 
         names = chunk.keys().tolist()
@@ -482,7 +472,11 @@ class MyTestCase(unittest.TestCase):
         # recommended
         way1 = chunk.keys().tolist()
         way2 = chunk.columns.values.tolist()
+
+        way3 = chunk.iterrows().next()[1].keys().tolist()
+
         self.assertEqual(way1, way2)
+        self.assertEqual(way1, way3)
 
     def test_column_name_to_column_index(self):
         chunk = self._basic_read()
@@ -494,23 +488,59 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(idx, chunk.columns.get_loc(name))
 
     def test_update_specific_item_value(self):
+        '''
+        .set_value(index, col, value, takeable=False)
+            index : row label
+            col : column label
+            value : scalar value
+            takeable : interpret the index/col as indexers, default False
+        http://pandas.pydata.org/pandas-docs/version/0.17.1/generated/pandas.DataFrame.set_value.html
 
+
+        set_value() is the best way to update value
+        https://stackoverflow.com/questions/13842088/set-value-for-particular-cell-in-pandas-dataframe/24517695#24517695
+
+        only accept .set_value(<row_index>, <column_name>, <value>)
+
+        '''
         chunk = self._basic_read()
 
-        for idx, row in chunk.iterrows():
-            if row[g_column_names[1]] == 'bbb':
-                chunk.set_value(idx, g_column_names[1], 'eee')
+        # find 'bbb'
+        index = None
+        column_name = None
 
-        self._dataframe_equal_matrix(
-            chunk
-            , [
-                [111, 'aaa', 'nnn'],
-                [111, 'eee', 'mmm'],
-                [222, 'ccc', 'xxx'],
-                [333, 'ddd', 'yyy'],
-            ]
-            , g_column_names
-        )
+        for row_idx, row in chunk.iterrows():
+            # row is not iterable
+            # row.values / row.get_values() 列值  v
+            # values 与 get_values() 的区别在于 values 做了转换，猜测可能性能不如 get_values() 好
+            # row.keys()  列名字
+
+            for idx, v in enumerate(row.get_values()):
+                if v == 'bbb':
+                    index = (row_idx, idx)
+                    column_name = row.keys()[idx]
+                    break
+
+        matrix = [
+            [111, 'aaa', 'nnn'],
+            [111, 'eee', 'mmm'],
+            [222, 'ccc', 'xxx'],
+            [333, 'ddd', 'yyy'],
+        ]
+
+        if index is not None:
+            chunk1 = deepcopy(chunk)
+            chunk2 = deepcopy(chunk)
+
+            # set by row_index, column_name
+            chunk1.set_value(index[0], column_name, 'eee')
+
+            # bad
+            # set by row_index, column_index
+            # chunk2.set_value(index[0], index[1], 'eee') # not found the columns '1', it will insert new column.
+
+            self._dataframe_equal_matrix(chunk1, matrix, g_column_names)
+            # self._dataframe_equal_matrix(chunk2, matrix, g_column_names)
 
     def test_insert_new_column(self):
 
@@ -570,10 +600,59 @@ class MyTestCase(unittest.TestCase):
         a = chunk[chunk.keys().tolist()[0]].drop_duplicates().tolist()
         a = set(a)
 
-        a_check = set([ row[0] for row in g_data_matrix ])
+        a_check = set([row[0] for row in g_data_matrix])
 
         self.assertEqual(a, a_check)
 
+    def test_iterable(self):
+
+        chunk = self._basic_read()
+
+        for v in chunk:
+            pass  # print (v) # column names
+
+        for k in chunk.iterrows():
+            pass  # (row_index, row_Series)
+
+        for k in chunk.iteritems():
+            pass  # (column_name, column_Series)
+
+        # type= pandas.indexes.base.Index
+        for k in chunk.keys():
+            pass  # column name
+
+        for k in chunk.itertuples():
+            pass  # type= pandas.core.frame.Pandas,
+            # print (getattr(k,g_column_names[0]))   one row , with the column name attr, so result is [111, 111, 222, 333]
+
+    def test_thread_function(self):
+
+        def _thread_func(row):
+            row_index = row[0]
+            names = row[1].keys().tolist()
+            column_name = names[0]
+            # v = u'{}00'.format(row[1][names[0]])
+            v = row[1][names[0]] + 10
+            return (row_index, column_name, v)
+
+        chunk = self._basic_read()
+
+        rows = chunk.iterrows()
+
+        updates = []
+        for row in rows:
+            r = _thread_func(row)
+            updates.append(r)
+
+        for u in updates:
+            # 注意这里第 3 个参数 value 应该为 int 或者能被 转为 int 的 str
+            chunk.set_value(*u)
+
+        matrix = deepcopy(g_data_matrix)
+        for row in matrix:
+            row[0] = row[0] + 10
+
+        self._dataframe_equal_matrix(chunk, matrix, chunk.keys().tolist())
 
 
 if __name__ == '__main__':
