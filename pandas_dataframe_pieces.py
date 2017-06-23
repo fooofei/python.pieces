@@ -1,5 +1,14 @@
 # coding=utf-8
 
+'''
+
+pandas 解析日志文件时，要显式的在 read_csv() 参数中指定 dtype, 字符串用 'S'，因为日志会有乱码的情况，
+pandas 会有警告 DtypeWarning: Columns (7,10) have mixed types. Specify dtype option on import or set low_memory=False.
+
+或者指定 converters={key:lambda v: v.decode('utf-8') for key in names}
+
+'''
+
 import os
 import sys
 import pandas as pd
