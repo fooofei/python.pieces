@@ -199,12 +199,18 @@ class MyTestCase(unittest.TestCase):
                                ))
 
     def test_drop_columns(self):
+        '''
+        https://chrisalbon.com/python/pandas_dropping_column_and_rows.html
+
+        '''
 
         chunk = self._basic_read()
 
         # give drop columns index's list
         v = chunk.columns[[1]]  # type= pandas.indexes.base.Index
         # axis : int or axis name
+        # axis = 1 means drop column
+        # axis = 0 means drop row
         chunk2 = chunk.drop(v, axis=1)
 
         names2 = g_column_names[:]
