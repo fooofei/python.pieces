@@ -31,6 +31,7 @@ scandir.walk  benchmark :
 # 2017-05-16 v2.40 add io_is_process_run_in_visual_studio()
 # 2017-05-16 v2.50 add io_iter_split_step_pre()
 # 2017-05-30 v2.60 add __all__
+# 2017-06-21 v2.70 add io_render_to_html()
 
 
 from __future__ import with_statement
@@ -561,6 +562,48 @@ def io_from_timestamp(ts):
     elif not (ts == 0):
         raise ValueError('unexcept timestamp format {0}'.format(ts_str))
     return datetime.datetime.fromtimestamp(ts)
+
+def io_render_to_html(template_fullpath, *args, **kwargs):
+    '''
+    A sample :
+    values = {
+        u'ext_info':u'测试info',
+        u'tables':[
+            {
+                u'name':u'第一个表',
+                u'headers':[u'名字',u'年龄'],
+                u'header_color':'#CCCC00',
+                u'values':[
+                    { u'color':'#99CC00',
+                      u'values':[{u'color':'#FF6666',u'value':u'小红'},{u'color':'',u'value':u'30'},],
+                    },
+                    {
+                        u'color':'CCCC00',
+                        u'values':[{u'color':'',u'value':u'宝能'},{u'color':'#0066CC',u'value':u'23'},],
+                    },
+
+
+                ]
+            },
+        ]
+    }
+    '''
+    import jinja2
+    if template_fullpath is None:
+        template_fullpath = os.path.dirname(os.path.realpath(__file__))
+        template_fullpath = os.path.join(template_fullpath, u'template.html')
+    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(template_fullpath))
+    env = jinja2.Environment(loader=loader)
+    # can not use absolute path , jiaja2 bug
+    template = env.get_template(os.path.basename(template_fullpath))
+    return template.render(*args, **kwargs)
+
+def io_size_fmt(num, suffix='B'):
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return u"%.1f%s%s" % (num, 'Yi', suffix)
 
 '''
 end

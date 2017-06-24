@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+</head>
+
+<body>
+
+
+<!--
+{'ext_info' : <> ,
+ 'tables': [
+ 		 {'name': <>,
+ 		  'headers': <>,
+		  'header_color': <>,
+		  'rows': [ 
+                    {'row_color':<>, 'row_values': [ {'item_color':<> , 'item_value':<> ,}, ... ] },
+                    {'row_color':<>, 'row_values':[] }, ...
+                    ]
+ 		 }
+ 		,
+ 		...
+ 	],
+}
+-->
+
+<!-- html file info-->
+<p>{{ext_info}}</p>
+<div >
+	<br/>
+	<br/>
+	<br/>
+    <!--tables-->
+	{% for table in tables%}
+    
+    <!-- table name, table info-->
+	<p> {{ table['name'] }} </p>
+	<table style = "font-size:14px;font-family:Microsoft YaHei UI" border="1" cellpadding="5" cellspacing="0">
+		<tr bgcolor="{{ table['header_color']}}">
+        <!--table headers-->
+		{% for item in table['headers'] %}
+			<th>{{ item }}</th>
+		{% endfor  %}
+		</tr>
+        
+        <!-- table rows -->
+		{% for row in table['rows'] %}
+		<tr bgcolor="{{ loop.cycle('#EAF2D3', 'White') if row['row_color']=='' else row['row_color'] }}"> 
+			{% for item in row['row_values'] %}
+			<td bgcolor="{{ item['item_color'] }}">{{ item['item_value'] }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor  %}
+
+	</table>
+	
+	<br/>
+	<br/>
+	<br/>
+	<br/>
+
+	{% endfor %}
+
+
+</div>
+
+</body>
+</html>
