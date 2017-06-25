@@ -1,5 +1,12 @@
 #coding=utf-8
 
+'''
+See A class with one member, one method is can do the same thing with
+
+a closure.
+
+'''
+
 import unittest
 
 class MyObject(object):

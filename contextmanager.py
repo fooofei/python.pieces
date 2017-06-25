@@ -1,5 +1,11 @@
 #coding=utf-8
 
+'''
+One instance need to init, use, and close here.
+
+Compare three ways to do this.
+
+'''
 
 from contextlib import contextmanager
 

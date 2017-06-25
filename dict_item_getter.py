@@ -1,76 +1,49 @@
 ﻿# coding=utf-8
 
+'''
+
+场景: 从服务端返回的数据是 json 格式，我们想要的数据要经过连续多次 dict.get。
+
+'''
+
+import os
+import sys
+import unittest
 
 
 def dict_item_getter(data, keys):
-    f = lambda x, y: x[y] if x and y in x else None
+    f = lambda x, y: x.get(y,None) if isinstance(x,dict)  else None
     return reduce(f, keys, data)
 
 
 def dict_item_getter2(data, keys):
     for e in keys:
-        if e in data:
-            data = data[e]
-        else:
-            return None
+        if isinstance(data,dict):
+            data = data.get(e,None)
+        else: return None
     else:
         return data
 
 
-def test(data, keys, func):
-    print ('func {}'.format(func.__name__))
-    print ('keys:{} result:{}'.format(keys, func(data, keys)))
+class MyTestCase(unittest.TestCase):
 
 
-def test2(data, keys):
-    print('data {}'.format(data))
-    for e in keys:
-        print('-----------------------')
-        test(data, e, dict_item_getter)
-        test(data, e, dict_item_getter2)
+    def test(self):
 
+        data = {'1': {'2': {'3': 'hello'}}}
+        keys = [
+            (['1'],{'2': {'3': 'hello'}}),
+            (['1', '2'], {'3': 'hello'}),
+            (['1', '2', '3'],'hello'),
+            (['1', '2', '3', '4'],None),
+            (['1', '3'],None),
+        ]
 
-def entry():
-    a = {'1': {'2': {'3': 'hello'}}}
-    a_keyss = [
-        ['1'],
-        ['1', '2'],
-        ['1', '2', '3'],
-        ['1', '2', '3', '4'],
-        ['1', '3'],
-    ]
+        for v in keys:
 
-    test2(a, a_keyss)
+            self.assertEqual(v[1], dict_item_getter(data,v[0]))
+            self.assertEqual(v[1], dict_item_getter2(data,v[0]))
 
 
 if __name__ == '__main__':
-    entry()
-
-'''
-data {'1': {'2': {'3': 'hello'}}}
------------------------
-func dict_item_getter
-keys:['1'] result:{'2': {'3': 'hello'}}
-func dict_item_getter2
-keys:['1'] result:{'2': {'3': 'hello'}}
------------------------
-func dict_item_getter
-keys:['1', '2'] result:{'3': 'hello'}
-func dict_item_getter2
-keys:['1', '2'] result:{'3': 'hello'}
------------------------
-func dict_item_getter
-keys:['1', '2', '3'] result:hello
-func dict_item_getter2
-keys:['1', '2', '3'] result:hello
------------------------
-func dict_item_getter
-keys:['1', '2', '3', '4'] result:None
-func dict_item_getter2
-keys:['1', '2', '3', '4'] result:None
------------------------
-func dict_item_getter
-keys:['1', '3'] result:None
-func dict_item_getter2
-keys:['1', '3'] result:None
-'''
+    unittest.main()

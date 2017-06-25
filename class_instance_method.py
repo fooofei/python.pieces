@@ -2,6 +2,8 @@
 
 '''
     Python 中给一个类添加方法的时候的书写形式有以下几种
+
+    第一参数 self 的名字不是固定的
 '''
 
 class Baby(object):
