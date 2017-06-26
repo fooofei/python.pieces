@@ -1,5 +1,11 @@
 #coding=utf-8
 
+'''
+几个同事工作之余的讨论问题
+
+'''
+
+import unittest
 
 def is_exists_2_or_more_zero(a,b,c):
     '''
@@ -9,27 +15,22 @@ def is_exists_2_or_more_zero(a,b,c):
     return (a+b+c +1) == ((a+1)*(b+1)*(c+1))
 
 
-def entry():
-    cases = [
-        (0,0,0),
-        (0,0,1),
-        (0,1,0),
-        (1,1,0),
-        (0,1,1),
-        (1,1,1)
-    ]
+class MyTestCase(unittest.TestCase):
 
-    for e in cases:
-        print (is_exists_2_or_more_zero(*e))
+    def test(self):
+        cases = [
+            ((0, 0, 0),True),
+            ((0, 0, 1),True),
+            ((0, 1, 0),True),
+            ((1, 1, 0),False),
+            ((0, 1, 1),False),
+            ((1, 1, 1),False),
+        ]
 
-    '''
-    True
-    True
-    True
-    False
-    False
-    False
-    '''
+        for e in cases:
+            self.assertEqual(is_exists_2_or_more_zero(*e[0]),e[1])
+
+
 
 if __name__ == '__main__':
-    entry()
+    unittest.main()

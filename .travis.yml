@@ -16,4 +16,5 @@ script: python generator_for_list.py
 script: python get_encoding_from_xml_header.py
 script: python global_list_not_use_global_keyword.py
 script: python yield_write_file.py
+script: python is_exists_2_or_more_zero.py
 
