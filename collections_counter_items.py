@@ -11,6 +11,7 @@
 import os
 import sys
 from collections import Counter
+from collections import defaultdict
 import unittest
 
 class MyTestCase(unittest.TestCase):
@@ -61,11 +62,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(b.items(), [('a', 11), ('c', 1), ('b', 4)])
 
     def test_counter_error(self):
+        ''' 请问 这可以说是 Counter() 的 bug 吗 '''
         b = Counter()
         b.update({'a': '4'})  # 首次使用时 b 为空 'a' 直接使用 dict 的构造方式(update())填充进去 值为 '4'
         b.update({'a': '7'})  # 取出 'a' 的值 '4' 在此基础上 + '7'， 为 '47'
 
-        self.assertEqual(b.items(), [('a','47')])
+        self.assertEqual(b.items(), [('a','47')]) # Python 3.6 is [('a','74')])
 
         with self.assertRaises(TypeError):
             b.update({'a':9})
@@ -91,39 +93,28 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(b.items(), c.items())
 
-        self.assertEqual(b.items(), [('a',2),('b',2),('c',3)])
+
+    def test_item_sum_count(self):
+        import itertools
+        a = ['a', 'a', 'b', 'b',
+             'c', 'c', 'c']
+
+        b = Counter(a)
+
+        self.assertIsInstance(b.elements(), itertools.chain)
+
+        with self.assertRaises(TypeError):
+            len(b.elements())
+
+        length = sum((1 for _ in b.elements()))
+
+        length2 = sum(b.values())
 
 
+        self.assertEqual(length, length2)
+        self.assertEqual(length, len(a))
 
 
-def sum_all_item_count():
-    from collections import Counter
-    a = ['a', 'a', 'b', 'b',
-         'c', 'c', 'c']
-
-    b = Counter(a)
-
-    # b.elements() is itertools.chain object
-    '''
-    itertools.chain(*iterables)
-    # 把元素再拆分的意思
-    def chain(*iterables):
-        # chain('ABC', 'DEF') --> A B C D E F
-        for it in iterables:
-            for element in it:
-                yield element
-    '''
-
-    print (sum(1 for _ in b.elements()))
-
-
-def entry():
-    counter_list()
-    counter_list2()
-    counter_update_items()
-    counter_update_items2()
-    counter_list_old_way()
-    sum_all_item_count()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,28 +1,31 @@
 #coding=utf-8
 
+import os
+import sys
+import unittest
+import types
+
+class MyTestCase(unittest.TestCase):
 
 
-def foo1():
+    def test_1(self):
+        l = [1, 2, 3, 4, 5]
 
-    l = [1,2,3,4,5]
+        l2 = [v * v for v in l]
 
-    l2 = [v*v for v in l]
-
-    print (l2) # [1, 4, 9, 16, 25]
-
-
-def foo2():
-    l = [1,2,3,4,5]
-
-    l2 = (v*v for v in l)
-
-    print (l2) # <generator object <genexpr> at 0x0273F620>
+        self.assertIsInstance(l2, list)
+        self.assertEqual(l2, [1, 4, 9, 16, 25])
 
 
-    print (list(l2)) # [1, 4, 9, 16, 25]
+    def test_2(self):
+        l = [1, 2, 3, 4, 5]
 
+        l2 = (v * v for v in l)
+
+        self.assertIsInstance(l2, types.GeneratorType)
+
+        self.assertEqual(list(l2),  [1, 4, 9, 16, 25])
 
 
 if __name__ == '__main__':
-    foo1()
-    foo2()
+    unittest.main()

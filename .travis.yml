@@ -10,4 +10,9 @@ script: python chang_list_value_inplace.py
 script: python check_list_all_elements_equal.py
 script: python chinese_value_dict_print.py
 script: python closure_compare_class.py
+script: python collections_counter_items.py
+script: python dict_item_getter.py
+script: python generator_for_list.py
+script: python get_encoding_from_xml_header.py
+script: python global_list_not_use_global_keyword.py
 

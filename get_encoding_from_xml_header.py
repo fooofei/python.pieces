@@ -9,6 +9,9 @@
 
 '''
 
+import os
+import sys
+import unittest
 
 def _get_encoding_from_xml_header(xml_content):
     '''
@@ -43,3 +46,14 @@ def _get_encoding_from_xml_header(xml_content):
     return encoding
 
 
+
+class MyTestCase(unittest.TestCase):
+
+    def test_get_encoding(self):
+        a = '<?xml version="1.0" encoding="GBK" ?>'
+
+        self.assertEqual(_get_encoding_from_xml_header(a),'GBK')
+
+
+if __name__ == '__main__':
+    unittest.main()
