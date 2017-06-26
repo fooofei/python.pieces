@@ -15,7 +15,7 @@ def is_command_exists_in_env(command):
     import subprocess
 
     try:
-        with open(os.devnull) as devnull:
+        with open(os.devnull,'wb') as devnull:
             p = subprocess.Popen([command, u'--version'], stdout=devnull, stderr=devnull)
             p.wait()
         return True
