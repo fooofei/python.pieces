@@ -13,14 +13,15 @@ what is different :
 
 '''
 
-from __future__ import unicode_literals
+from __future__ import print_function
 
 import os
 import requests
 import time
 from threading import Thread
 from multiprocessing import Process
-
+import unittest
+import random
 
 task_count = 10
 
@@ -156,12 +157,17 @@ def profile_multiprocessing_process():
     t.execute('net',_multiprocessing_process_framework, target=much_net, args=(None,))
 
 
-def _futures_threadpool_framework(target,args):
+def _futures_threadpool_framework(func,iterable):
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=task_count) as pool:
-        r = pool.map(target,args)
+        r = pool.map(func,iterable)
         pool.shutdown(wait=True)
         return list(r)
+
+def _multiprocessing_threadpool_framework(func, iterable):
+    from multiprocessing.pool import ThreadPool
+    pl = ThreadPool(processes=task_count)
+    return pl.map(func,iterable)
 
 
 def profile_futures_threadpool():
@@ -193,10 +199,8 @@ def _get_obj():
     '''
     only use by my self    
     '''
-    from libexportqex import QexScanner
-    scan = QexScanner(qex_save_dir=r'')
-    scan.set_config_use_local_qvm()
-    return scan
+    # c instance
+    return None
 
 def _get_data():
     '''
@@ -238,6 +242,33 @@ def profile_python_c_threadpool():
               ins_generator_func=_get_obj,
               thread_func=_thread_func,
               max_workers=task_count)
+
+
+def _thread_func_compare_concurrent_multiprocessing(arg):
+    time.sleep(arg)
+    return arg
+
+class MyTestCase(unittest.TestCase):
+
+    def test_compare_concurrent_multiprocessing(self):
+        iterable = [random.randint(0,9) for _ in range(20)]
+
+        t= time.clock()
+        r1 = _futures_threadpool_framework(_thread_func_compare_concurrent_multiprocessing
+                                          , iterable)
+        t1 = time.clock()-t
+
+        t = time.clock()
+        r2 = _multiprocessing_threadpool_framework(_thread_func_compare_concurrent_multiprocessing
+                                                   , iterable)
+        t2 = time.clock()-t
+
+        self.assertEqual(int(t1),int(t2))
+        self.assertEqual(int(t1),max(iterable))
+
+        self.assertEqual(r1,r2)
+        self.assertEqual(r1,iterable)
+
 
 
 if __name__ == '__main__':
