@@ -5,23 +5,23 @@ import logging
 
 
 class LoggerHelper(object):
-    FORMAT = u'[%(asctime)s module=%(module)s func=%(funcName)s %(levelname)s] %(message)s'
     datefmt = u'%Y/%m/%d %H:%M:%S'
 
-    def __init__(self):
+    def __init__(self, fmt=None):
         self._log = None
         self._memory_handler = None
+        self._format = fmt if fmt else u'[%(asctime)s module=%(module)s func=%(funcName)s %(levelname)s] %(message)s'
 
-    @staticmethod
-    def _get_formatter():
-        return logging.Formatter(LoggerHelper.FORMAT,datefmt=LoggerHelper.datefmt)
+    def _get_formatter(self):
+        return logging.Formatter(self._format,datefmt=LoggerHelper.datefmt)
 
     def get_logger(self):
 
         if self._log is None:
             handler = logging.StreamHandler()
-            handler.setFormatter(LoggerHelper._get_formatter())
+            handler.setFormatter(self._get_formatter())
             log = logging.getLogger(__name__)
+            while log.handlers: log.handlers.pop()  # 遇到过重复输出
             log.addHandler(handler)
             log.setLevel(logging.DEBUG)
             self._log = log
@@ -31,7 +31,7 @@ class LoggerHelper(object):
         from logging.handlers import MemoryHandler
         if self._memory_handler is None:
             h = MemoryHandler(10 * 1024 * 1024)
-            h.setFormatter(LoggerHelper._get_formatter())
+            h.setFormatter(self._get_formatter())
             self._log.addHandler(h)
             self._memory_handler = h
 
@@ -39,6 +39,7 @@ class LoggerHelper(object):
         '''
         log 输出到屏幕的同时 可以内存留一份 方便程序结束发邮件 汇总信息
         '''
+        if not self._memory_handler: return []
         return (self._memory_handler.format(rec) for rec in self._memory_handler.buffer)
 
 
