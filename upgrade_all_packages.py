@@ -4,13 +4,18 @@
 
 import pip
 import subprocess
+import sys
 
 def entry():
 
-    for dist in pip.get_installed_distributions():
-        subprocess.call(['pip','install',
+    c = []
+    if sys.platform.startswith('linux'):
+        c.append('sudo')
+    c.extend(['pip','install',
                          #'--proxy=',
-                         '--upgrade',dist.project_name])
+                         '--upgrade'])
+    for dist in pip.get_installed_distributions():
+        subprocess.call( c + [dist.project_name])
 
 
 if __name__ == '__main__':
