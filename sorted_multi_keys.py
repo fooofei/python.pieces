@@ -83,6 +83,12 @@ class MyTestCase(unittest.TestCase):
             data.sort(key=lambda x: x['name'])
             data.sort(key=lambda x: x['age'])
 
+        update:
+            This can work, but must sort first by the order priority lowest
+
+            因此如果要实现 age 和 name 一个升序和一个降序 就可以用这个方法
+
+
         ref https://docs.python.org/2/howto/sorting.html#sortinghowto
         # The Old Way Using Decorate-Sort-Undecorate
 
@@ -97,6 +103,12 @@ class MyTestCase(unittest.TestCase):
         l = sorted(g_data, key=lambda x : (x['name'],x['age']))
 
         self.assertEqual(l, g_data_sorted_by_name_age)
+
+        l2 = sorted(g_data, key=lambda x: x['age'])
+        l3 = sorted(l2, key= lambda x : x['name'])
+
+        self.assertEqual(l3, l)
+
 
     def test_sorted_by_key_name_age2(self):
         from operator import itemgetter  # obj['item']
