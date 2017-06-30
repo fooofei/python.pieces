@@ -4,30 +4,46 @@
 
 import os
 import sys
+import types
+import unittest
+import itertools
 
-class MyClass1(object):
+from collections import Iterable as IterableType
+
+class MyClass_null(object):
 
     def __init__(self):
         self._v = {'a':1,
                    'b':2}
 
 
-class MyClass2(object):
+class MyClass_getitem(object):
     def __init__(self):
         self._v = {'a':1,
                    'b':2}
 
 
     def __getitem__(self, item):
-        print ('call MyClass2:__getitem__({})'.format(item))
+        # print ('call MyClass2:__getitem__({})'.format(item))
         return self._v.get(item,None)
 
 
 
+class MyClass_getitem_fix(object):
+    def __init__(self):
+        self._v = {'a':1,
+                   'b':2}
+
+
+    def __getitem__(self, item):
+
+        if not self._v.has_key(item):
+            raise IndexError('')
+        return self._v.get(item)
+
 
 def is_iterable_by_collections(obj):
-    from collections import Iterable
-    return isinstance(obj, Iterable)
+    return isinstance(obj, IterableType)
 
 def is_iterable_by_iter(obj):
     try:
@@ -36,75 +52,52 @@ def is_iterable_by_iter(obj):
     except TypeError:
         return False
 
-def iterable():
 
-    o1 = MyClass1()
-    o2 = MyClass2()
+class MyTestCase(unittest.TestCase):
 
-    print ('o1 Iterable {}'.format(is_iterable_by_collections(o1)))
-    print ('o1 iter {}'.format(is_iterable_by_iter(o1)))
+    def test_iterable(self):
+        o_null = MyClass_null()
+        o_getitem = MyClass_getitem()
 
-    print ('o2 Iterable {}'.format(is_iterable_by_collections(o2)))
-    print ('o2 iter {}'.format(is_iterable_by_iter(o2)))
-
-    '''
-    o1 Iterable False
-    o1 iter False
-    o2 Iterable False
-    o2 iter True
-    '''
-
-def iter_():
-
-    o1 = MyClass1()
-
-    '''
-    # TypeError
-    for e in o1:
-        print (e)
-    '''
-
-    o2 = MyClass2()
-    c = 0
+        self.assertTrue(not is_iterable_by_collections(o_null))
+        self.assertTrue(not is_iterable_by_collections(o_getitem))
 
 
-    for e in o2:
-        print (e)
+        self.assertTrue(not is_iterable_by_iter(o_null))
+        self.assertTrue(is_iterable_by_iter(o_getitem))
 
-        c += 1
-        if c > 10:
-            break
 
-    '''
-    call MyClass2:__getitem__(0)
-    None
-    call MyClass2:__getitem__(1)
-    None
-    call MyClass2:__getitem__(2)
-    None
-    call MyClass2:__getitem__(3)
-    None
-    call MyClass2:__getitem__(4)
-    None
-    call MyClass2:__getitem__(5)
-    None
-    call MyClass2:__getitem__(6)
-    None
-    call MyClass2:__getitem__(7)
-    None
-    call MyClass2:__getitem__(8)
-    None
-    call MyClass2:__getitem__(9)
-    None
-    call MyClass2:__getitem__(10)
-    None
-    '''
+    def test(self):
+        o_null = MyClass_null()
+        o_getitem = MyClass_getitem()
 
-def error_infinit_loop():
+        with self.assertRaises(TypeError):
+            for i in o_null:
+                pass
 
-    o2 = MyClass2()
+        for i,c in zip(range(1000),o_getitem):
+            pass
 
-    '1' in o2
+        self.assertEqual(i, 999)
+
+
+    def test_instance_method(self):
+        a = dir(MyClass_getitem())
+        b = dir(MyClass_null())
+
+        a = set(a)
+        b = set(b)
+
+
+        self.assertEqual(a-b, set(['__getitem__']))
+
+
+    def test_fix(self):
+
+        o_fix = MyClass_getitem_fix()
+
+        '1' in o_fix
+
 
 if __name__ == '__main__':
-    error_infinit_loop()
+    unittest.main()

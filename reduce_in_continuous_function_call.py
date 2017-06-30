@@ -9,6 +9,7 @@
 
 '''
 
+from functools import reduce as reduce
 
 
 def func_raw(var):
@@ -27,24 +28,24 @@ def func_refactoring_code(var):
 
 def _one_call(start_num):
     v = func_refactoring_code(start_num)
-    print ('result :{}'.format(v))
+    print('result :{}'.format(v))
     assert (v == func_raw(start_num))
 
 
 def func1(a):
-    print ('call {}'.format(func1.__name__))
+    print('call {}'.format(func1.__name__))
     if a < 3:
         return None
     return a+1
 
 def func2(a):
-    print ('call {}'.format(func2.__name__))
+    print('call {}'.format(func2.__name__))
     if a <7:
         return None
     return a+2
 
 def func3(a):
-    print ('call {}'.format(func3.__name__))
+    print('call {}'.format(func3.__name__))
     if a < 10:
         return None
     return a+3
@@ -53,14 +54,14 @@ def func3(a):
 def entry():
     from functools import reduce
 
-    print ('begin 1 --------')
+    print('begin 1 --------')
     _one_call(1)
-    print ('\n\nbegin 3 --------')
+    print('\n\nbegin 3 --------')
     _one_call(3)
-    print ('\n\nbegin 4 --------')
+    print('\n\nbegin 4 --------')
     _one_call(4)
 
-    print ('\n\nbegin 10 --------')
+    print('\n\nbegin 10 --------')
     _one_call(10)
 
 if __name__ == '__main__':
