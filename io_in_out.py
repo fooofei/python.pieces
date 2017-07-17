@@ -284,6 +284,11 @@ def io_thread_map(thread_func,thread_data,max_workers=20):
     等价于 :
         for e in thread_data:
             r = thread_func(e)
+
+    返回的结果顺序与参数 thread_data 提供的顺序一致
+
+    即便是保持了顺序 但是也不是说没并行 还是存在并行的
+
     '''
 
     from concurrent.futures import ThreadPoolExecutor
@@ -604,6 +609,13 @@ def io_size_fmt(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return u"%.1f%s%s" % (num, 'Yi', suffix)
+
+def io_windows_filetime_to_datetime(win_ft):
+    import datetime
+    # to unix time
+    epoch = divmod(win_ft - 116444736000000000, 10000000)
+    if epoch[0]<0: epoch=(0,)+epoch[1::]
+    return datetime.datetime.fromtimestamp(epoch[0])
 
 '''
 end
