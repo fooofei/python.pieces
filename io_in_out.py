@@ -171,16 +171,13 @@ def io_sys_stderr(arg):
 def io_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
-    print('')
+    io_sys_stdout(u'')
     sys.stdout.flush()
 
 
 def io_stderr_print(arg):
     io_sys_stderr(arg)
-    if pyver < 3:
-        print >> sys.stderr, ''
-    else:
-        eval('print("",file=sys.stderr)')
+    io_sys_stderr(u'')
     sys.stderr.flush()
 
 
