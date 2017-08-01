@@ -155,6 +155,8 @@ def _io_standard_write(writer, arg):
     # Terminal use Terminal's encoding, else use utf-8
     encoding = writer.encoding if sys.stdout.isatty() else 'utf-8'
     arg = io_bytes_arg(arg, encoding=(encoding,) if encoding else None)
+    # py3 use sys.stdout.buffer.write
+    # py2 use sys.stdout.write
     return getattr(writer, 'buffer', writer).write(arg)
 
 
