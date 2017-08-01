@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding=UTF-8 -*-
 
 
 '''
@@ -32,6 +32,9 @@ scandir.walk  benchmark :
 # 2017-05-16 v2.50 add io_iter_split_step_pre()
 # 2017-05-30 v2.60 add __all__
 # 2017-06-21 v2.70 add io_render_to_html()
+# 2017-07-31 v2.80 os.walk() 可能返回非 unicode 编码字符串，会导致异常
+# 2017-07-31 v2.90 add io_multiprocessing_thread_map_one_ins() 兼容 python2.6
+# 2017-08-01 v2.91 add 梳理 io path encoding
 
 
 from __future__ import with_statement
@@ -44,198 +47,143 @@ except ImportError:
     from os import walk as local_walk
 
 __all__ = [
-    'io_in_arg',
-    'io_bytes_arg',
-    'io_iter_files_from_arg',
-    'io_iter_root_files_from_arg',
-    'io_out_arg',
-    'io_sys_stdout',
-    'io_sys_stderr',
-    'io_print',
-    'io_stderr_print',
-    'io_files_from_arg',
-    'io_is_path_valid',
-    'io_path_format',
-    'io_thread_map',
-    'io_thread_map_one_ins',
-    'dict_item_getter',
-    'io_directory_merge',
-    'io_hash_memory',
-    'io_hash_stream',
-    'io_hash_fullpath',
-    'io_line_is_hash',
-    'io_simple_check_md5',
-    'io_simple_check_hash',
-    'io_simple_check_sha256',
-    'io_simple_check_sha1',
-    'io_iter_split_step',
-    'io_sequence_function',
-    'io_is_process_run_in_visual_studio',
-    'io_from_timestamp',
-    'io_raw_input',
-    'pyver',
-    'io_in_code',
-    'io_iter_split_step_pre',
-    'io_out_code',
-    'io_binary_type',
 ]
-
 
 pyver = sys.version_info[0]  # major
 if pyver >= 3:
-    io_in_code = str # io 读取时应该转换成为的目标编码
-    io_out_code = bytes
     io_binary_type = bytes
     io_text_type = str
     io_raw_input = input
     io_integer_types = (int)
 else:
-    io_in_code = unicode
-    io_out_code = str
     io_raw_input = raw_input
     io_binary_type = str
     io_text_type = unicode
     io_integer_types = (int, long)
-io_str_codes = (io_text_type, io_binary_type)
+io_str_codecs = (io_text_type, io_binary_type)
 
 
-def io_in_arg(arg):
-    if not arg:
-        return arg
-    if isinstance(arg, io_text_type):
-        return arg
-    codes = ['utf-8', 'gbk']
-    for c in codes:
+def io_text_arg(arg, encoding=None, pfn_check=None):
+    '''
+    :param encoding: tuple (,)
+    :param pfn_check: to check the convertion is right
+    '''
+    if not arg: return arg
+    if isinstance(arg, io_text_type): return arg
+    if not pfn_check: pfn_check = lambda x: x
+    encodings = []
+    if encoding: encodings.extend(list(encoding))
+    encodings.extend(['utf-8', 'gb18030', 'gbk', 'windows-1250'])
+    er = None
+    for c in encodings:
         try:
-            return arg.decode(c)
+            v = arg.decode(c)
+            if pfn_check(v): return v
         except UnicodeDecodeError as er:
             pass
-    else:
-        raise er
+    raise er
 
 
-def io_bytes_arg(arg):
+def io_bytes_arg(arg, encoding=None):
+    '''python 与 ctypes 交互也用这个， ctypes 需要 py3 中的 bytes 类型
     '''
-    python 与 ctypes 交互也用这个， ctypes 需要 py3 中的 bytes 类型
-    :param arg:
-    :return:
-    '''
-    if not arg:
-        return arg
-    if isinstance(arg, io_text_type):
-        codes = ['utf-8', 'gbk']
-        for c in codes:
-            try:
-                return arg.encode(c)
-            except UnicodeEncodeError as er:
-                pass
-        else:
-            raise er
-    return arg
+    if not arg: return arg
+    if not isinstance(arg, io_text_type): return arg
+    encodings = []
+    if encoding: encodings.extend(list(encoding))
+    encodings.extend(['utf-8', 'gb18030', 'gbk'])
+
+    er = None
+    for c in encodings:
+        try:
+            return arg.encode(c)
+        except UnicodeEncodeError as er:
+            pass
+    raise er
 
 
 def io_iter_files_from_arg(args):
+    ''' No UnicodeEncodeError()
+    问题：bytes 编码的路径 能 walk，之后 decode 之后变成 unicode ，os.path.exists 失效了'''
+
+    def _io_text_path(p):
+        try:
+            return io_text_arg(p, pfn_check=exists)
+        except UnicodeDecodeError:
+            return None
+
+    exists = os.path.exists
+
     for e in args:
         if os.path.isfile(e):
-            yield io_in_arg(e)
+            v = _io_text_path(e)
+            if v: yield v
         elif os.path.isdir(e):
-            e = io_in_arg(e)
+            # 有些路径不可以被转换到 unicode
+            e = io_bytes_arg(e)
             for root, sub, files in local_walk(e):
                 for i in files:
-                    yield os.path.join(root, i)
+                    v = os.path.join(root, i)
+                    v = _io_text_path(v)
+                    if v: yield v
     raise StopIteration
+
 
 def io_iter_root_files_from_arg(args):
+    def _io_text_path(p):
+        try:
+            return io_text_arg(p, pfn_check=exists)
+        except UnicodeDecodeError:
+            return None
+
+    exists = os.path.exists
     for e in args:
         if os.path.isfile(e):
-            yield io_in_arg(e)
+            v = _io_text_path(e)
+            if v: yield v
         elif os.path.isdir(e):
-            e = io_in_arg(e)
+            e = io_bytes_arg(e)
             for sub in os.listdir(e):
-                p = os.path.join(e,sub)
-                yield p
+                p = os.path.join(e, sub)
+                if os.path.isfile(p):
+                    v = _io_text_path(p)
+                    if v: yield v
     raise StopIteration
 
-def io_out_arg(arg, default_encoding=sys.stdout.encoding, pfn_check = None):
-    '''
-    python 脚本内的字符串传递给其他 c 模块时或者输出到屏幕时的编码转换
-    :param arg:
-    :param default_encoding:
-    :param pfn_check: 用来校验转换是否可取，unicode 中文路径，用 utf-8 可以成功转换，但是 os.path.exists() return False,
-           所以需要继续使用 gbk 编码转换
-    :return:
-    '''
-    global pyver
-    if pyver < 3:
-        codes = []
-        if default_encoding:
-            codes.append(default_encoding)
-        codes.extend(['utf-8', 'gbk'])
-        er = 'not accept'
-        for c in codes:
-            try:
-                x =  arg.encode(c)
-                if pfn_check:
-                    try:
-                        if not pfn_check(x):
-                            continue
-                    except Exception as er1:
-                        continue
-                return x
-            except UnicodeEncodeError as er:
-                pass
-        else:
-            raise ValueError(repr(er))
-    else:
-        return arg
 
-
-def io_sys_std_err_or_out(writer,arg):
-    io_conv_func = lambda e: io_out_arg(e,writer.encoding) if isinstance(e, io_str_codes) else str(e)
-    if isinstance(arg, (tuple, list, dict)):
-        x = map(io_conv_func, arg)
-        arg = '\t'.join(x)
-    else:
-        arg = io_conv_func(arg)
-    r = writer.write(arg)
-    writer.flush()
-    return r
+def _io_standard_write(writer, arg):
+    # Terminal use Terminal's encoding, else use utf-8
+    encoding = writer.encoding if sys.stdout.isatty() else 'utf-8'
+    arg = io_bytes_arg(arg, encoding=(encoding,) if encoding else None)
+    return getattr(writer, 'buffer', writer).write(arg)
 
 
 def io_sys_stdout(arg):
-    return io_sys_std_err_or_out(sys.stdout,arg)
+    return _io_standard_write(sys.stdout, arg)
+
 
 def io_sys_stderr(arg):
-    return io_sys_std_err_or_out(sys.stderr,arg)
+    return _io_standard_write(sys.stderr, arg)
+
 
 def io_print(arg):
+    arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
-    print ('')
+    print('')
     sys.stdout.flush()
+
 
 def io_stderr_print(arg):
     io_sys_stderr(arg)
-    global pyver
     if pyver < 3:
-        print >>sys.stderr,''
+        print >> sys.stderr, ''
     else:
         eval('print("",file=sys.stderr)')
+    sys.stderr.flush()
 
 
 def io_files_from_arg(args):
-    r = []
-    for e in args:
-        if os.path.isfile(e):
-            r.append(io_in_arg(e))
-        elif os.path.isdir(e):
-            e = io_in_arg(e)
-            for root, sub, files in local_walk(e):
-                for i in files:
-                    x = os.path.join(root, i)
-                    r.append(x)
-        else:
-            io_print(u'unaccept arg {0}'.format(io_in_arg(e)))
-    return r
+    return list(io_iter_files_from_arg(args))
 
 
 def io_is_path_valid(pathname):
@@ -266,20 +214,22 @@ def io_is_path_valid(pathname):
     else:
         return True
 
-def io_path_format(fullpath,replace_with=None):
+
+def io_path_format(fullpath, replace_with=None):
     '''
     remove forbidden chars in path
     :param fullpath: 
     :return: 
     '''
-    if not isinstance(fullpath,io_in_code):
-        raise ValueError(u'only support type {0}'.format(io_in_code))
+    if not isinstance(fullpath, io_text_type):
+        raise ValueError(u'only support type {0}'.format(io_text_type))
 
     windows_path_forbidden_chars = u'\\/*?:"<>|'
-    remove_map = dict((ord(char),replace_with if replace_with else None) for char in windows_path_forbidden_chars )
+    remove_map = dict((ord(char), replace_with if replace_with else None) for char in windows_path_forbidden_chars)
     return fullpath.translate(remove_map)
 
-def io_thread_map(thread_func,thread_data,max_workers=20):
+
+def io_thread_map(thread_func, thread_data, max_workers=20):
     '''
     等价于 :
         for e in thread_data:
@@ -297,7 +247,32 @@ def io_thread_map(thread_func,thread_data,max_workers=20):
         pool.shutdown(wait=True)
         return list(r)
 
-def io_thread_map_one_ins(thread_func,thread_data,ins_generator_func,max_workers=8):
+
+def io_multiprocessing_thread_map_one_ins(thread_func, thread_data, ins_generator_func, max_workers=8):
+    '''
+    等价于 :
+        for e in thread_data:
+            r = thread_func(ins_generator_func(),e)
+    区别于 io_thread_pool : 适用于 1 个线程 1 个实例的情景
+    '''
+    import threading
+    from multiprocessing.pool import ThreadPool
+
+    thread_local_data = threading.local()
+
+    def _func_in_thread(every_thread_data):
+        try:
+            thread_local_data.ins
+        except AttributeError:
+            thread_local_data.ins = ins_generator_func()
+        return thread_func(thread_local_data.ins, every_thread_data)
+
+    a = ThreadPool(processes=max_workers)
+    r = a.map(_func_in_thread, thread_data)
+    return r
+
+
+def io_thread_map_one_ins(thread_func, thread_data, ins_generator_func, max_workers=8):
     '''
     等价于 :
         for e in thread_data:
@@ -308,17 +283,19 @@ def io_thread_map_one_ins(thread_func,thread_data,ins_generator_func,max_workers
     from concurrent.futures import ThreadPoolExecutor
 
     thread_local_data = threading.local()
+
     def _func_in_thread(every_thread_data):
         try:
             thread_local_data.ins
         except AttributeError:
             thread_local_data.ins = ins_generator_func()
-        return thread_func(thread_local_data.ins,every_thread_data)
+        return thread_func(thread_local_data.ins, every_thread_data)
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         r = pool.map(_func_in_thread, thread_data)
         pool.shutdown(wait=True)
         return list(r)
+
 
 def dict_item_getter(data, keys):
     '''
@@ -328,7 +305,7 @@ def dict_item_getter(data, keys):
     return reduce(f, keys, data)
 
 
-def io_directory_merge(src,dst):
+def io_directory_merge(src, dst):
     '''
 
     需求 ： 把 sub 目录整体移动到 parent 内，效果为： parent/sub
@@ -354,20 +331,20 @@ def io_directory_merge(src,dst):
         copy_tree(src=sub,dst=os.path.join(parent,os.path.basename(sub)))
         remove_tree(directory=sub)
         '''
-    from distutils.dir_util import  copy_tree,remove_tree
+    from distutils.dir_util import copy_tree, remove_tree
 
     if not (not os.path.exists(dst) or os.path.isdir(dst)):
         raise ValueError('parent must not exist or is dir')
     # src must be an exist directory
     # 如果文件存在会自动覆盖
-    copy_tree(src=src,dst=os.path.join(dst,os.path.basename(src)))
+    copy_tree(src=src, dst=os.path.join(dst, os.path.basename(src)))
     remove_tree(directory=src)
 
 
-def io_hash_stream(stream, hash_algorithm=u'md5',block_size=2 ** 20):
+def io_hash_stream(stream, hash_algorithm=u'md5', block_size=2 ** 20):
     import hashlib
-    hash_ins = {u'md5':hashlib.md5(),
-                u'sha1':hashlib.sha1()}.get(hash_algorithm,None)
+    hash_ins = {u'md5': hashlib.md5(),
+                u'sha1': hashlib.sha1()}.get(hash_algorithm, None)
     if not hash_ins:
         raise ValueError('not get proper hash algorithm')
     while 1:
@@ -377,15 +354,16 @@ def io_hash_stream(stream, hash_algorithm=u'md5',block_size=2 ** 20):
         hash_ins.update(data)
     return hash_ins.hexdigest()
 
-def io_hash_memory(memory,hash_algorithm=u'md5'):
+
+def io_hash_memory(memory, hash_algorithm=u'md5'):
     from io import BytesIO
     with BytesIO(memory) as f:
-        return io_hash_stream(f,hash_algorithm)
+        return io_hash_stream(f, hash_algorithm)
 
 
-def io_hash_fullpath(fullpath,hash_algorithm=u'md5'):
-    with open(fullpath,'rb') as f:
-        return io_hash_stream(stream=f,hash_algorithm=hash_algorithm)
+def io_hash_fullpath(fullpath, hash_algorithm=u'md5'):
+    with open(fullpath, 'rb') as f:
+        return io_hash_stream(stream=f, hash_algorithm=hash_algorithm)
 
 
 def io_line_is_hash(line):
@@ -394,18 +372,23 @@ def io_line_is_hash(line):
             re.match(u"[a-fA-F\d]{40}", line) or
             re.match(u"[a-fA-F\d]{32}", line))
 
-def _io_simple_check_hash(line,hash_length):
+
+def _io_simple_check_hash(line, hash_length):
     fn = lambda e: all(i in '1234567890abcdefABCDEF' for i in e)
     return len(line) == hash_length and fn(line)
 
+
 def io_simple_check_md5(line):
-    return _io_simple_check_hash(line,32)
+    return _io_simple_check_hash(line, 32)
+
 
 def io_simple_check_sha1(line):
-    return _io_simple_check_hash(line,40)
+    return _io_simple_check_hash(line, 40)
+
 
 def io_simple_check_sha256(line):
-    return _io_simple_check_hash(line,64)
+    return _io_simple_check_hash(line, 64)
+
 
 def io_simple_check_hash(line):
     return io_simple_check_md5(line) or io_simple_check_sha1(line) or io_simple_check_sha256(line)
@@ -436,6 +419,7 @@ def _io_iter_split_step(data, split_unit_count):
             yield tuple(r)
             r = []
 
+
 def io_iter_split_step(data, split_unit_count):
     '''
     :param data:  must be isinstance(data, collections.Iterable):
@@ -449,7 +433,7 @@ def io_iter_split_step(data, split_unit_count):
     i = iter(data)
     while True:
         # slice return iterable
-        r = tuple(islice(i,split_unit_count))
+        r = tuple(islice(i, split_unit_count))
         if not r: break
         yield (r)
 
@@ -466,7 +450,8 @@ def io_iter_split_step_pre(data, split_unit_count):
     for i in io_iter_split_step(tasksi, split_unit_count):
         yield i
 
-def io_sequence_function(initial,function_sequence):
+
+def io_sequence_function(initial, function_sequence):
     '''
     :param initial: 
     :param function_sequence: list of Functions
@@ -539,10 +524,11 @@ def io_sequence_function(initial,function_sequence):
         118
         
     '''
-    _fn = lambda x,y : y(x)
+    _fn = lambda x, y: y(x)
     fs = [initial]
     fs.extend(function_sequence)
-    return reduce(_fn,fs)
+    return reduce(_fn, fs)
+
 
 def io_is_process_run_in_visual_studio():
     import psutil
@@ -563,10 +549,11 @@ def io_from_timestamp(ts):
     if len(ts_str) == 10:
         ts = int(ts)
     elif len(ts_str) == 13:
-        ts = float(int(ts))/1000
+        ts = float(int(ts)) / 1000
     elif not (ts == 0):
         raise ValueError('unexcept timestamp format {0}'.format(ts_str))
     return datetime.datetime.fromtimestamp(ts)
+
 
 def io_render_to_html(template_fullpath, *args, **kwargs):
     '''
@@ -603,6 +590,7 @@ def io_render_to_html(template_fullpath, *args, **kwargs):
     template = env.get_template(os.path.basename(template_fullpath))
     return template.render(*args, **kwargs)
 
+
 def io_size_fmt(num, suffix='B'):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
@@ -610,37 +598,49 @@ def io_size_fmt(num, suffix='B'):
         num /= 1024.0
     return u"%.1f%s%s" % (num, 'Yi', suffix)
 
+
 def io_windows_filetime_to_datetime(win_ft):
     import datetime
     # to unix time
     epoch = divmod(win_ft - 116444736000000000, 10000000)
-    if epoch[0]<0: epoch=(0,)+epoch[1::]
+    if epoch[0] < 0: epoch = (0,) + epoch[1::]
     return datetime.datetime.fromtimestamp(epoch[0])
+
 
 '''
 end
 '''
 
 
-def test_unicode_list():
-    arg = [u'你好', u"中国"]
-    io_print(arg)
+def test_unicode_print():
+    '''
+    python 2 windows
+        print  encoding=cp936
+        print > encoding=None
+    python 3 windows
+        print encoding=utf-8
+        print > encoding=cp936
 
+    python 2 linux
+        print encoding=utf-8
+        print > encoding=None
 
-def test_tupple():
-    a = (1, '2', '34', u'中国')
-    io_print(a)
+    python 3 linux
+        print encoding=utf-8
+        print > encoding=utf-8
 
-
-
+    '''
+    io_print(u'你好中国')
 
 
 def test_path():
-    io_print(u'stdout_encoding:{0}'.format(sys.stdout.encoding))
-    p = io_files_from_arg(sys.argv[1::])
+    import os
+    io_stderr_print(u'isatty:{0}'.format(sys.stdout.isatty()))
+    io_stderr_print(u'stdout_encoding:{0}'.format(sys.stdout.encoding))
+    p = io_iter_files_from_arg(sys.argv[1::])
     for e in p:
-        io_print(e)
-        io_print(io_is_path_valid(e))
+        io_sys_stdout(u'type:{0} {1}'.format(type(e), e))
+        io_print(u' path_valid:{0}'.format(io_is_path_valid(e)))
 
 
 def test_io_is_path_valid():
@@ -655,7 +655,7 @@ def test_io_is_path_valid():
     c:\21>->invalid 
     '''
 
-    _func = lambda p :u'{}->{}'.format(p,u'valid' if io_is_path_valid(p) else u'invalid')
+    _func = lambda p: u'{}->{}'.format(p, u'valid' if io_is_path_valid(p) else u'invalid')
 
     io_print(_func(u'c:\\1'))
     io_print(_func(u'c:\\21?'))
@@ -676,23 +676,23 @@ def test_io_split_step():
 
     '''
     cases = [
-        ([1,2], 5, [(1, 2)]),
+        ([1, 2], 5, [(1, 2)]),
         ([1, 2, 3, 4, 5, 6, 7], 4, [(1, 2, 3, 4), (5, 6, 7)]),
         ([1, 2, 3, 4, 5, 6, 7], 3, [(1, 2, 3), (4, 5, 6), (7,)])
     ]
 
     for e in cases:
-        assert (list(io_iter_split_step(e[0],e[1])) == e[2])
-        assert (list(_io_iter_split_step(e[0],e[1])) == e[2])
+        assert (list(io_iter_split_step(e[0], e[1])) == e[2])
+        assert (list(_io_iter_split_step(e[0], e[1])) == e[2])
 
     print (u'pass {0}'.format(test_io_split_step.__name__))
 
+
 def test():
-    test_unicode_list()
-    test_tupple()
+    test_unicode_print()
     test_path()
-    test_io_is_path_valid()
-    test_io_split_step()
+    # test_io_is_path_valid()
+    # test_io_split_step()
 
 
 if __name__ == '__main__':
