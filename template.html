@@ -8,10 +8,6 @@
 
 
 <!--
-This is a Python Jinja2 template file.
-
-The data struct in Python is :
-
 {'ext_info' : <> ,
  'tables': [
  		 {'name': <>,
@@ -39,7 +35,11 @@ The data struct in Python is :
     
     <!-- table name, table info-->
 	<p> {{ table['name'] }} </p>
-	<table style = "font-size:14px;font-family:Microsoft YaHei UI" border="1" cellpadding="5" cellspacing="0">
+    
+    <div>
+    {% if table['rows'] %}
+    
+    <table style = "font-size:14px;font-family:Microsoft YaHei UI" border="1" cellpadding="5" cellspacing="0">
 		<tr bgcolor="{{ table['header_color']}}">
         <!--table headers-->
 		{% for item in table['headers'] %}
@@ -57,6 +57,11 @@ The data struct in Python is :
 		{% endfor  %}
 
 	</table>
+    
+    {%endif%}
+    </div>
+    
+	
 	
 	<br/>
 	<br/>
