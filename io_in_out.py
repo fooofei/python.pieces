@@ -61,6 +61,7 @@ else:
     io_text_type = unicode
     io_integer_types = (int, long)
 io_str_codecs = (io_text_type, io_binary_type)
+io_terminal_encoding=sys.stdout.encoding if sys.stdout.isatty() else 'utf-8'
 
 
 def io_text_arg(arg, encoding=None, pfn_check=None):
@@ -153,7 +154,7 @@ def io_iter_root_files_from_arg(args):
 
 def _io_standard_write(writer, arg):
     # Terminal use Terminal's encoding, else use utf-8
-    encoding = writer.encoding if sys.stdout.isatty() else 'utf-8'
+    encoding = io_terminal_encoding
     arg = io_bytes_arg(arg, encoding=(encoding,) if encoding else None)
     # py3 use sys.stdout.buffer.write
     # py2 use sys.stdout.write
