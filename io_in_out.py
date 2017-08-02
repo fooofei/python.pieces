@@ -172,13 +172,13 @@ def io_sys_stderr(arg):
 def io_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
-    io_sys_stdout(u'')
+    io_sys_stdout(os.linesep)
     sys.stdout.flush()
 
 
 def io_stderr_print(arg):
     io_sys_stderr(arg)
-    io_sys_stderr(u'')
+    io_sys_stderr(os.linesep)
     sys.stderr.flush()
 
 
