@@ -61,7 +61,7 @@ else:
     io_text_type = unicode
     io_integer_types = (int, long)
 io_str_codecs = (io_text_type, io_binary_type)
-io_terminal_encoding=sys.stdout.encoding if sys.stdout.isatty() else 'utf-8'
+io_terminal_encoding = sys.stdout.encoding if sys.stdout.isatty() else 'utf-8'
 
 
 def io_text_arg(arg, encoding=None, pfn_check=None):
@@ -69,11 +69,14 @@ def io_text_arg(arg, encoding=None, pfn_check=None):
     :param encoding: tuple (,)
     :param pfn_check: to check the convertion is right
     '''
+
     if not arg: return arg
     if isinstance(arg, io_text_type): return arg
     if not pfn_check: pfn_check = lambda x: x
     encodings = []
-    if encoding: encodings.extend(list(encoding))
+    if encoding and isinstance(encoding, (tuple, list)):
+        encodings.extend(list(encoding))
+        encodings = filter(lambda x: x, encodings)
     encodings.extend(['utf-8', 'gb18030', 'gbk', 'windows-1250'])
     er = None
     for c in encodings:
@@ -85,19 +88,24 @@ def io_text_arg(arg, encoding=None, pfn_check=None):
     raise er
 
 
-def io_bytes_arg(arg, encoding=None):
+def io_bytes_arg(arg, encoding=None, pfn_check=None):
     '''python 与 ctypes 交互也用这个， ctypes 需要 py3 中的 bytes 类型
     '''
+
     if not arg: return arg
     if not isinstance(arg, io_text_type): return arg
+    if not pfn_check: pfn_check = lambda x: x
     encodings = []
-    if encoding: encodings.extend(list(encoding))
+    if encoding and isinstance(encoding, (tuple, list)):
+        encodings.extend(list(encoding))
+        encodings = filter(lambda x: x, encodings)
     encodings.extend(['utf-8', 'gb18030', 'gbk'])
 
     er = None
     for c in encodings:
         try:
-            return arg.encode(c)
+            v = arg.encode(c)
+            if pfn_check(v): return v
         except UnicodeEncodeError as er:
             pass
     raise er
@@ -121,7 +129,7 @@ def io_iter_files_from_arg(args):
             if v: yield v
         elif os.path.isdir(e):
             # 有些路径不可以被转换到 unicode
-            e = io_bytes_arg(e)
+            e = io_bytes_arg(e, pfn_check=exists)
             for root, sub, files in local_walk(e):
                 for i in files:
                     v = os.path.join(root, i)
@@ -143,7 +151,7 @@ def io_iter_root_files_from_arg(args):
             v = _io_text_path(e)
             if v: yield v
         elif os.path.isdir(e):
-            e = io_bytes_arg(e)
+            e = io_bytes_arg(e, pfn_check=exists)
             for sub in os.listdir(e):
                 p = os.path.join(e, sub)
                 if os.path.isfile(p):
@@ -173,6 +181,7 @@ def io_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
     io_sys_stdout(os.linesep)
+    # io_sys_stdout('\r')
     sys.stdout.flush()
 
 
@@ -634,10 +643,15 @@ def test_unicode_print():
 
 
 def test_path():
+    ''' create dir u'中国/中国' for test'''
     import os
+    import functools
     io_stderr_print(u'isatty:{0}'.format(sys.stdout.isatty()))
     io_stderr_print(u'stdout_encoding:{0}'.format(sys.stdout.encoding))
-    p = io_iter_files_from_arg(sys.argv[1::])
+
+    f = functools.partial(io_text_arg, encoding=(sys.stdout.encoding,))
+    fs = map(f, sys.argv[1::])
+    p = io_iter_files_from_arg(fs)
     for e in p:
         io_sys_stdout(u'type:{0} {1}'.format(type(e), e))
         io_print(u' path_valid:{0}'.format(io_is_path_valid(e)))
