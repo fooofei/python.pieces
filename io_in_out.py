@@ -38,6 +38,7 @@ scandir.walk  benchmark :
 
 
 from __future__ import with_statement
+from __future__ import print_function
 import os
 import sys
 
@@ -50,6 +51,7 @@ __all__ = [
 ]
 
 pyver = sys.version_info[0]  # major
+sys_platform = sys.platform
 if pyver >= 3:
     io_binary_type = bytes
     io_text_type = str
@@ -163,7 +165,7 @@ def io_iter_root_files_from_arg(args):
 def _io_standard_write(writer, arg):
     # Terminal use Terminal's encoding, else use utf-8
     encoding = io_terminal_encoding
-    arg = io_bytes_arg(arg, encoding=(encoding,) if encoding else None)
+    arg = io_bytes_arg(arg, encoding=(encoding,))
     # py3 use sys.stdout.buffer.write
     # py2 use sys.stdout.write
     return getattr(writer, 'buffer', writer).write(arg)
@@ -180,16 +182,15 @@ def io_sys_stderr(arg):
 def io_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
-    io_sys_stdout(os.linesep)
-    # io_sys_stdout('\r')
+    print('',file=sys.stdout)
     sys.stdout.flush()
 
 
 def io_stderr_print(arg):
+    arg = u'{0}'.format(arg)
     io_sys_stderr(arg)
-    io_sys_stderr(os.linesep)
+    print('',file=sys.stderr)
     sys.stderr.flush()
-
 
 def io_files_from_arg(args):
     return list(io_iter_files_from_arg(args))
