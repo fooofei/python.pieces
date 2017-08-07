@@ -19,7 +19,7 @@ else:
 def entry():
     '''
     1 在 Python 2.7.13 测试 LoadLibrary 只接受 bytes string 参数，不接受 unicode string.
-    2 一个字符串编码转换测试背景，一个 unicode string 中文路径，经过 decode.('utf-8') 后，os.path.exists 会 return False
+    2 一个字符串编码转换测试背景，一个 unicode string 中文路径，经过 decode.('utf-8') 后，Windows 上 os.path.exists 会 return False
       猜测是因为 Windows API char 使用的是 GB18030 ，linux 使用的是 utf-8
     3 Windows API 和 linux API char 的编码不同，验证过程是 ：
 
