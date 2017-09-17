@@ -1,5 +1,7 @@
 # coding=utf-8
-
+'''
+the file shows how to assign a new list when pass to a function's param
+'''
 import os
 import sys
 import unittest

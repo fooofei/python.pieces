@@ -1,5 +1,9 @@
 #coding=utf-8
 
+'''
+the file shows how to make a elements's generator
+'''
+
 import os
 import sys
 import unittest

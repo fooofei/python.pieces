@@ -1,5 +1,8 @@
 #coding=utf-8
 
+'''
+the file shows about modify a element of list
+'''
 
 # ref https://stackoverflow.com/questions/6329499/in-python-why-is-list-automatically-global
 # ref https://stackoverflow.com/questions/4630543/defining-lists-as-global-variables-in-python

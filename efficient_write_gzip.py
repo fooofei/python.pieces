@@ -1,8 +1,9 @@
 #coding=utf-8
 
 '''
+the file shows a more efficient way to write a gzip file
 
- 更高效地写 gzip 文件 , 推荐使用 write_gzip_with_io_bufferwriter 的方式
+recommended use io.BufferedWriter
 
 '''
 

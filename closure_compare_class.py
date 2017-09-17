@@ -1,9 +1,9 @@
 #coding=utf-8
 
 '''
-See A class with one member, one method is can do the same thing with
+See A class with one member, one method
 
-a closure.
+is can equivalent with a closure.
 
 '''
 

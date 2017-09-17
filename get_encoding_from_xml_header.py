@@ -1,9 +1,13 @@
 # coding=utf-8
 
 '''
+the file shows how to use xml's header encoding to decode a xml
+
 服务器返回的数据有时候是 xml, 在头部 encoding 标记为 utf-8 外的其他编码，
-现有的 xml 解析库默认都是以 utf-8 解码，虽然可以传入参数，但是我们要根据 xml 头中的
-编码来解码整个文本。
+现有的 xml 解析库默认都是以 utf-8 解码，即使把编码用参数传递，但是无法做到
+自动取用 xml 中记载的编码
+
+但是我们要根据 xml 头中的编码来解码整个文本。
 
 下面的函数就是一段 xml 文本中读取头部，获取应该使用的编码。
 

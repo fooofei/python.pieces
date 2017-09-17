@@ -21,10 +21,11 @@ import ctypes
 
 def entry():
     # if so has undefined symbol, this also can load success.
-    # 当遇到未定义符号的函数会报错误 python: symbol lookup error: xxxx.so: undefined symbol: xxxx
+    # load 成功后，运行时当遇到未定义符号的函数会报错误 python: symbol lookup error: xxxx.so: undefined symbol: xxxx
 
     a = ctypes.CDLL('xxxxx.so',mode=1)
 
+    # 这种 mode 直接报错
     # ctypes.CDLL('xxxx.so')
     # == ctypes.CDLL('xxxx.so',mode=2)
 

@@ -19,8 +19,18 @@ script: python yield_write_file.py
 script: python is_exists_2_or_more_zero.py
 script: python py_in_infinit_loop.py
 script: python pandas_dataframe_pieces.py
-script: python outer_merge_sort.py
-script: python merge_sort_recursion.py
-script: python merge_sort_no_recursion.py
-script: python itertools_tee.py
+script: python sort_outer_merge_sort.py
+script: python sort_merge_sort_recursion.py
+script: python sort_merge_sort_no_recursion.py
+script: python iterator_itertools_tee.py
+script: python iterator_peek_iter.py
+script: python class_instance_method.py
+script: python contextmanager.py
+script: python coroutine_decorator.py
+script: python efficient_write_gzip.py
+script: python yield_weired.py
+script: python yield_normal.py
+script: python sorted_multi_keys.py
+script: python reduce_in_continuous_function_call.py
+
 

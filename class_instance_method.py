@@ -6,31 +6,32 @@
     第一参数 self 的名字不是固定的
 '''
 
+import unittest
+
 class Baby(object):
 
     def foo(self):
         print ('baby:foo()')
         print (self)
+        return self
 
     def cry(*args):
         print ('baby:cry()')
         print (args)
+        return args[0]
 
     def eat(x):
         print ('baby:eat()')
         print (x)
+        return x
 
 
-def entry():
-    a = Baby()
-    a.foo()
-    print ('')
+class MyTestCase(unittest.TestCase):
+    def test1(self):
+        obj = Baby()
 
-    a.cry()
-    print ('')
-
-    a.eat()
-    print ('')
+        # all equals with self
+        self.assertEqual(obj.foo(),obj.cry(),obj.eat())
 
 
 '''
@@ -45,4 +46,4 @@ baby:eat()
 '''
 
 if __name__ == '__main__':
-    entry()
+    unittest.main()

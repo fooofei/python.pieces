@@ -5,7 +5,7 @@ Someone use this decorator of  coroutine to wrap a function,
 
 to auto start a generator.
 
-I found by this way, it lost it's first yield return value.
+unfortunately I found by this way, it lost it's first yield return value.
 
 https://books.google.com.tw/books?id=kYZHCgAAQBAJ&pg=PA486&lpg=PA486&dq=using+a+decorator++remembering+to+call+.next()+is+easy+to+forget&source=bl&ots=irDlZyELKn&sig=wdr4hzxG4PgVPYgJAefVvPfCIj0&hl=zh-CN&sa=X&ved=0ahUKEwi0kKnCnurUAhVNNbwKHcOxDZUQ6AEIITAA#v=onepage&q=using%20a%20decorator%20%20remembering%20to%20call%20.next()%20is%20easy%20to%20forget&f=false
 

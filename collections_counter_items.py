@@ -1,11 +1,8 @@
 #coding=utf-8
 
 '''
-
-    Python 中计数的方式
-    
-    如果不使用 collections.Counter 的话，会是这么用 counter_list_old_way()
-
+the file shows how to count in python
+the old way and the use collections.Counter  way
 '''
 
 import os
@@ -83,12 +80,8 @@ class MyTestCase(unittest.TestCase):
         b = {}
 
         for e in a:
-            if not e in b:
-                b[e] = 1
-            else:
-                b[e] += 1
-
-
+            b.setdefault(e,0)
+            b[e] += 1
         c = Counter(a)
 
         self.assertEqual(b.items(), c.items())

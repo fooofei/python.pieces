@@ -1,6 +1,7 @@
-#coding=utf-8
+# coding=utf-8
 
 '''
+the file shows how to use linux command `mail` to send html content
 linux mail command usage
 
 # 多行书写
@@ -55,48 +56,43 @@ echo "你好<br>是我" | mail  -s "$( echo -e "this is title\nContent-Type: tex
 '''
 
 
+def linux_command_mail(content, subject, receiver):
+  '''
+  - 都要使用 unicode
+  - 可以有中文
+  '''
+  import sh
+  import base64
 
-def linux_command_mail(content,subject,receiver):
-    '''
-    都要使用 unicode 可以有中文
-    '''
-    import sh
-    import base64
+  mail = sh.mail
+  echo = sh.echo
 
+  content = content.encode('utf-8')
+  content = base64.b64encode(content)
+  subject = subject.encode('utf-8')
+  subject = base64.b64encode(subject)
+  subject = '=?utf-8?B?{0}?='.format(subject)
 
-    mail = sh.mail
-    echo = sh.echo
-
-    content = content.encode('utf-8')
-    content = base64.b64encode(content)
-    subject = subject.encode('utf-8')
-    subject = base64.b64encode(subject)
-    subject = '=?utf-8?B?{0}?='.format(subject)
-
-    mail(echo(content), '-s',
-         '{0}\nContent-Transfer-Encoding: base64\r\nContent-Type: text/html;charset=UTF-8'.format(subject),
-         receiver)
+  mail(echo(content), '-s',
+       '{0}\nContent-Transfer-Encoding: base64\r\nContent-Type: text/html;charset=UTF-8'.format(subject),
+       receiver)
 
 
 def entry():
+  v = []
+  v.append(u'测试1')
+  v.append(u'测试2')
+  v.append(u'测试3![]=')
+  v.append(u'测试4![]=')
 
-    v = []
-    v.append(u'测试1')
-    v.append(u'测试2')
-    v.append(u'测试3![]=')
-    v.append(u'测试4![]=')
+  v = u'<br/>'.join(v)
 
-    v = u'<br/>'.join(v)
-
-    linux_command_mail(
-        v,
-        u'测试标题',
-        u'example@excample.com'
-    )
-
-
-
+  linux_command_mail(
+    v,
+    u'测试标题',
+    u'example@excample.com'
+  )
 
 
 if __name__ == '__main__':
-    entry()
+  entry()

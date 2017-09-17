@@ -1,9 +1,12 @@
 #coding=utf-8
 
 '''
-One instance need to init, use, and close here.
+The file shows if we have one instance which have a call sequence
+ init(), use(), and close().
 
-Compare three ways to do this.
+how to make sure we close() it in python.
+
+there are there ways to do this.
 
 '''
 

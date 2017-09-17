@@ -2,12 +2,11 @@
 
 '''
 
+the file shows a way to get data from json
 场景: 从服务端返回的数据是 json 格式，我们想要的数据要经过连续多次 dict.get。
-
+or use jsonpath
 '''
 
-import os
-import sys
 import unittest
 
 

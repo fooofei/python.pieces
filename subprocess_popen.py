@@ -16,31 +16,32 @@
 import os
 import subprocess
 
-def amr2avi():
-    '''
-    amr 批量转换为 avi
-    此函数可以学习
 
-                
-    :return:
-    '''
-    pathf = r''
-    runexe = r''
-    for e in os.listdir(pathf):
-        if e.endswith('.amr'):
-            cmd = '{0} {1}'.format(runexe, os.path.join(pathf, e))
-            # no wait
-            p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
-            p.communicate(input='\n') # 这里需要向子进程中填入 \n 来继续运行，是因为子程序是这样写的
+def amr2avi():
+  '''
+  amr 批量转换为 avi
+  此函数可以学习
+
+
+  :return:
+  '''
+  pathf = r''
+  runexe = r''
+  for e in os.listdir(pathf):
+    if e.endswith('.amr'):
+      cmd = '{0} {1}'.format(runexe, os.path.join(pathf, e))
+      # no wait
+      p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
+      p.communicate(input='\n')  # 这里需要向子进程中填入 \n 来继续运行，是因为子程序是这样写的
 
 
 def _exec_check_output(*args, **kwargs):
-    ''' such as run _exec_check_output(['svn', 'up'],stderr=subprocess.STDOUT) '''
-    v  = subprocess.check_output(*args, **kwargs)
-    v = v.rstrip()
-    v = v.decode('utf-8')
-    return v
+  ''' such as run _exec_check_output(['svn', 'up'],stderr=subprocess.STDOUT) '''
+  v = subprocess.check_output(*args, **kwargs)
+  v = v.rstrip()
+  v = v.decode('utf-8')
+  return v
 
 
 if __name__ == '__main__':
-    amr2avi()
+  amr2avi()

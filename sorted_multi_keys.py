@@ -1,136 +1,127 @@
-#coding=utf-8
+# coding=utf-8
+
+'''
+the file shows how to sorted use multi keys
+'''
 
 
 def result_show(r):
+  print '['
 
-    print '['
+  for e in r:
+    print ('{},'.format(e))
 
-    for e in r:
-        print ('{},'.format(e))
-
-    print ']'
+  print ']'
 
 
 import os
 import sys
 import unittest
 
-
 g_data = [
-    {'age': 7, 'name': 'b'},
-    {'age': 3, 'name': 'a'},
-    {'age': 5, 'name': 'b'},
-    {'age': 8, 'name': 'c'},
-    {'age': 9, 'name': 'b'},
-    {'age': 2, 'name': 'A'},
+  {'age': 7, 'name': 'b'},
+  {'age': 3, 'name': 'a'},
+  {'age': 5, 'name': 'b'},
+  {'age': 8, 'name': 'c'},
+  {'age': 9, 'name': 'b'},
+  {'age': 2, 'name': 'A'},
 ]
 
-
 g_data_sorted_by_name = [
-    {'age': 2, 'name': 'A'},
-    {'age': 3, 'name': 'a'},
-    {'age': 7, 'name': 'b'},
-    {'age': 5, 'name': 'b'},
-    {'age': 9, 'name': 'b'},
-    {'age': 8, 'name': 'c'}
+  {'age': 2, 'name': 'A'},
+  {'age': 3, 'name': 'a'},
+  {'age': 7, 'name': 'b'},
+  {'age': 5, 'name': 'b'},
+  {'age': 9, 'name': 'b'},
+  {'age': 8, 'name': 'c'}
 ]
 
 g_data_sorted_by_name_ignore_case = [
-    {'age': 3, 'name': 'a'},
-    {'age': 2, 'name': 'A'},
-    {'age': 7, 'name': 'b'},
-    {'age': 5, 'name': 'b'},
-    {'age': 9, 'name': 'b'},
-    {'age': 8, 'name': 'c'},
+  {'age': 3, 'name': 'a'},
+  {'age': 2, 'name': 'A'},
+  {'age': 7, 'name': 'b'},
+  {'age': 5, 'name': 'b'},
+  {'age': 9, 'name': 'b'},
+  {'age': 8, 'name': 'c'},
 ]
 
 # name 优先  ，name 相等后 依据 age 排序
-g_data_sorted_by_name_age=[
-    {'age': 2, 'name': 'A'},
-    {'age': 3, 'name': 'a'},
-    {'age': 5, 'name': 'b'},
-    {'age': 7, 'name': 'b'},
-    {'age': 9, 'name': 'b'},
-    {'age': 8, 'name': 'c'},
+g_data_sorted_by_name_age = [
+  {'age': 2, 'name': 'A'},
+  {'age': 3, 'name': 'a'},
+  {'age': 5, 'name': 'b'},
+  {'age': 7, 'name': 'b'},
+  {'age': 9, 'name': 'b'},
+  {'age': 8, 'name': 'c'},
 ]
 
 
-
-
-
-
-
 class MyTestCase(unittest.TestCase):
+  def test_sorted_by_key_name(self):
+    l = sorted(g_data, key=lambda v: v['name'])
 
-    def test_sorted_by_key_name(self):
+    self.assertEqual(l, g_data_sorted_by_name)
 
-        l = sorted(g_data, key=lambda v:v['name'])
+  def test_sorted_by_key_name_ignore_case(self):
+    l = sorted(g_data, key=lambda v: v['name'].lower())
 
-        self.assertEqual(l, g_data_sorted_by_name)
+    self.assertEqual(l, g_data_sorted_by_name_ignore_case)
 
-    def test_sorted_by_key_name_ignore_case(self):
-        l = sorted(g_data, key=lambda v:v['name'].lower())
+  def test_sorted_by_key_name_age(self):
+    '''
+    someone say sort twice, the sample verify it not work
+    such as https://stackoverflow.com/questions/11206884/how-to-write-python-sort-key-functions-for-descending-values
 
-        self.assertEqual(l, g_data_sorted_by_name_ignore_case)
+    error:
+        data.sort(key=lambda x: x['name'])
+        data.sort(key=lambda x: x['age'])
 
+    update:
+        This can work, but must sort first by the order priority lowest
 
-    def test_sorted_by_key_name_age(self):
-        '''
-        someone say sort twice, the sample verify it not work
-        such as https://stackoverflow.com/questions/11206884/how-to-write-python-sort-key-functions-for-descending-values
-
-        error:
-            data.sort(key=lambda x: x['name'])
-            data.sort(key=lambda x: x['age'])
-
-        update:
-            This can work, but must sort first by the order priority lowest
-
-            因此如果要实现 age 和 name 一个升序和一个降序 就可以用这个方法
+        因此如果要实现 age 和 name 一个升序和一个降序 就可以用这个方法
 
 
-        ref https://docs.python.org/2/howto/sorting.html#sortinghowto
-        # The Old Way Using Decorate-Sort-Undecorate
+    ref https://docs.python.org/2/howto/sorting.html#sortinghowto
+    # The Old Way Using Decorate-Sort-Undecorate
 
 
-        This idiom works because tuples are compared lexicographically; the first items are compared;
-        if they are the same then the second items are compared, and so on.
+    This idiom works because tuples are compared lexicographically; the first items are compared;
+    if they are the same then the second items are compared, and so on.
 
 
-        '''
+    '''
 
+    l = sorted(g_data, key=lambda x: (x['name'], x['age']))
 
-        l = sorted(g_data, key=lambda x : (x['name'],x['age']))
+    self.assertEqual(l, g_data_sorted_by_name_age)
 
-        self.assertEqual(l, g_data_sorted_by_name_age)
+    l2 = sorted(g_data, key=lambda x: x['age'])
+    l3 = sorted(l2, key=lambda x: x['name'])
 
-        l2 = sorted(g_data, key=lambda x: x['age'])
-        l3 = sorted(l2, key= lambda x : x['name'])
+    self.assertEqual(l3, l)
 
-        self.assertEqual(l3, l)
+  def test_sorted_by_key_name_age2(self):
+    from operator import itemgetter  # obj['item']
+    from operator import attrgetter  # obj.attr
+    from operator import methodcaller  # obj.method()
 
+    l = sorted(g_data, key=itemgetter('name', 'age'))
 
-    def test_sorted_by_key_name_age2(self):
-        from operator import itemgetter  # obj['item']
-        from operator import attrgetter  # obj.attr
-        from operator import methodcaller  # obj.method()
+    self.assertEqual(l, g_data_sorted_by_name_age)
 
-        l = sorted(g_data, key=itemgetter('name', 'age'))
+  def test_sorted_by_key_name_age3(self):
+    def _my_cmp(x, y):
+      if x['name'] == y['name']:
+        return cmp(x['age'], y['age'])
 
-        self.assertEqual(l, g_data_sorted_by_name_age)
+      return cmp(x['name'], y['name'])
 
+    from functools import cmp_to_key
 
-    def test_sorted_by_key_name_age3(self):
-        def _my_cmp(x, y):
-            if x['name'] == y['name']:
-                return cmp(x['age'], y['age'])
+    l = sorted(g_data, key=cmp_to_key(_my_cmp))
+    self.assertEqual(l, g_data_sorted_by_name_age)
 
-            return cmp(x['name'], y['name'])
-
-        from functools import cmp_to_key
-
-        l = sorted(g_data, key=cmp_to_key(_my_cmp))
-        self.assertEqual(l, g_data_sorted_by_name_age)
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

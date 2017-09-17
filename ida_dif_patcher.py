@@ -1,5 +1,7 @@
 # coding=utf-8
 '''
+the file shows how to use ida'dif file to patch a file
+
 dif file like :
 This difference file has been created by IDA
 
