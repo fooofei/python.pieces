@@ -63,7 +63,9 @@ else:
     io_text_type = unicode
     io_integer_types = (int, long)
 io_str_codecs = (io_text_type, io_binary_type)
-io_terminal_encoding = sys.stdout.encoding if sys.stdout.isatty() else 'utf-8'
+io_terminal_encoding = 'utf-8'
+if sys.stdout.isatty(): io_terminal_encoding = sys.stdout.encoding
+io_filesystem_encoding = sys.getfilesystemencoding() # operating system depending encoding
 
 
 def io_text_arg(arg, encoding=None, pfn_check=None):
@@ -79,15 +81,16 @@ def io_text_arg(arg, encoding=None, pfn_check=None):
     if encoding and isinstance(encoding, (tuple, list)):
         encodings.extend(list(encoding))
         encodings = filter(lambda x: x, encodings)
+        encodings = list(encodings)
     encodings.extend(['utf-8', 'gb18030', 'gbk', 'windows-1250'])
     er = None
     for c in encodings:
         try:
             v = arg.decode(c)
             if pfn_check(v): return v
-        except UnicodeDecodeError as er:
-            pass
-    raise er
+        except UnicodeDecodeError as er0:
+            er = er0
+    raise (er or ValueError('decoding error {0} maybe not exists'.format(arg)))
 
 
 def io_bytes_arg(arg, encoding=None, pfn_check=None):
@@ -101,6 +104,7 @@ def io_bytes_arg(arg, encoding=None, pfn_check=None):
     if encoding and isinstance(encoding, (tuple, list)):
         encodings.extend(list(encoding))
         encodings = filter(lambda x: x, encodings)
+        encodings = list(encodings)
     encodings.extend(['utf-8', 'gb18030', 'gbk'])
 
     er = None
@@ -108,56 +112,59 @@ def io_bytes_arg(arg, encoding=None, pfn_check=None):
         try:
             v = arg.encode(c)
             if pfn_check(v): return v
-        except UnicodeEncodeError as er:
-            pass
-    raise er
+        except UnicodeEncodeError as er0:
+            er = er0
+    raise (er or ValueError(u'encoding error {0} maybe not exists'.format(arg)))
+
+
+def io_text_filesystem_path(arg):
+    try:
+        return io_text_arg(arg,
+                           encoding=(io_filesystem_encoding,),
+                           pfn_check=os.path.exists)
+    except UnicodeDecodeError:
+        return None
+
+
+def io_bytes_filesystem_path(arg):
+    try:
+        return io_bytes_arg(arg,
+                            encoding=(io_filesystem_encoding,),
+                            pfn_check=os.path.exists
+                            )
+    except UnicodeEncodeError:
+        return None
 
 
 def io_iter_files_from_arg(args):
     ''' No UnicodeEncodeError()
     问题：bytes 编码的路径 能 walk，之后 decode 之后变成 unicode ，os.path.exists 失效了'''
-
-    def _io_text_path(p):
-        try:
-            return io_text_arg(p, pfn_check=exists)
-        except UnicodeDecodeError:
-            return None
-
-    exists = os.path.exists
-
     for e in args:
         if os.path.isfile(e):
-            v = _io_text_path(e)
+            v = io_text_filesystem_path(e)
             if v: yield v
         elif os.path.isdir(e):
             # 有些路径不可以被转换到 unicode
-            e = io_bytes_arg(e, pfn_check=exists)
+            e = io_bytes_filesystem_path(e)
             for root, sub, files in local_walk(e):
                 for i in files:
                     v = os.path.join(root, i)
-                    v = _io_text_path(v)
+                    v = io_text_filesystem_path(v)
                     if v: yield v
     raise StopIteration
 
 
 def io_iter_root_files_from_arg(args):
-    def _io_text_path(p):
-        try:
-            return io_text_arg(p, pfn_check=exists)
-        except UnicodeDecodeError:
-            return None
-
-    exists = os.path.exists
     for e in args:
         if os.path.isfile(e):
-            v = _io_text_path(e)
+            v = io_text_filesystem_path(e)
             if v: yield v
         elif os.path.isdir(e):
-            e = io_bytes_arg(e, pfn_check=exists)
+            e = io_bytes_filesystem_path(e)
             for sub in os.listdir(e):
                 p = os.path.join(e, sub)
                 if os.path.isfile(p):
-                    v = _io_text_path(p)
+                    v = io_text_filesystem_path(p)
                     if v: yield v
     raise StopIteration
 
@@ -182,15 +189,16 @@ def io_sys_stderr(arg):
 def io_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stdout(arg)
-    print('',file=sys.stdout)
+    print('', file=sys.stdout)
     sys.stdout.flush()
 
 
 def io_stderr_print(arg):
     arg = u'{0}'.format(arg)
     io_sys_stderr(arg)
-    print('',file=sys.stderr)
+    print('', file=sys.stderr)
     sys.stderr.flush()
+
 
 def io_files_from_arg(args):
     return list(io_iter_files_from_arg(args))
@@ -700,7 +708,7 @@ def test_io_split_step():
         assert (list(io_iter_split_step(e[0], e[1])) == e[2])
         assert (list(_io_iter_split_step(e[0], e[1])) == e[2])
 
-    print (u'pass {0}'.format(test_io_split_step.__name__))
+    print(u'pass {0}'.format(test_io_split_step.__name__))
 
 
 def test():
