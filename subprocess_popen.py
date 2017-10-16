@@ -11,6 +11,27 @@
 3 执行参数中 escape 相关: pipes.quote()
 
 
+4 subprocess.Popen will error on posix call curl
+  subprocess.Popen(['curl',
+              '-F"file=@{0}"'.format(path_zip),
+               '-F"md5={0}"'.format(md5),
+               '-F"module=xxx"',
+               'http://xxx/update/up.php'], stdout=subprocess.PIPE)
+
+  or
+  subprocess.Popen(['curl',
+              '--form','"file=@{0}"'.format(path_zip),
+               '--form','"md5={0}"'.format(md5),
+               '--form','"module=xxx"',
+               'http://xxx/update/up.php'
+               ], stdout=subprocess.PIPE)
+
+  all fail, error message is curl: (26) failed creating formpost data
+  so we must use
+  out = subprocess.Popen(
+  'curl --form "file=@{0}" --form "md5={1}" --form "module=xxx" http://xxx/update/up.php'.format(path_zip,md5),
+  shell=True, stdout=subprocess.PIPE).communicate()[0]
+
 '''
 
 import os
