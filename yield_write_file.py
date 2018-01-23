@@ -2,6 +2,7 @@
 
 import os
 import sys
+import unittest
 
 
 def yield_write_file():
@@ -22,15 +23,23 @@ def yield_write_file():
 
     os.remove(p)
 
-def entry():
 
-    f = yield_write_file()
-    f.next()
-    f.send('nihao\n')
-    f.send('wobuhao')
-    try: f.send(None)
-    except StopIteration: pass
+class TestCase(unittest.TestCase):
+    '''
+    no with statement
+    '''
+    def test_next_send(self):
+        f = yield_write_file()
+        f.next()
+        f.send('nihao\n')
+        f.send('wobuhao')
+        try:
+            f.send(None)
+        except StopIteration:
+            print('got StopIteration')
+            pass
+
 
 
 if __name__ == '__main__':
-    entry()
+    unittest.main()
