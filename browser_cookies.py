@@ -4,6 +4,8 @@
 the file shows how to get cookies from Chrome browser installed machine.
 '''
 
+import os
+
 
 def _get_chrome_cookies_files():
   '''

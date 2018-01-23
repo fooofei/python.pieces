@@ -18,17 +18,17 @@ class MyTestCase(unittest.TestCase):
 
 
     def test_not_change(self):
-        l = ['b', 'a', 'c', 'f', 'e', 'd']
-        l2 = deepcopy(l)
+        l_origin = ['b', 'a', 'c', 'f', 'e', 'd']
+        l2 = deepcopy(l_origin)
         self._not_change(l2)
-        self.assertEqual(l2, l)
+        self.assertEqual(l2, l_origin)
 
 
     def test_change(self):
-        l = ['b', 'a', 'c', 'f', 'e', 'd']
-        l2 = deepcopy(l)
+        l_origin = ['b', 'a', 'c', 'f', 'e', 'd']
+        l2 = deepcopy(l_origin)
         self._change(l2)
-        self.assertEqual(l2, sorted(l))
+        self.assertEqual(l2, sorted(l_origin))
 
 
 if __name__ == '__main__':

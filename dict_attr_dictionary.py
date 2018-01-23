@@ -1,4 +1,7 @@
+#coding=utf-8
 """
+通过 . 语法把 dict 当作实例的属性访问
+
 A dict that implements MutableAttr.
 
 
