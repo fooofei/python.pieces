@@ -9,8 +9,10 @@ this file shows subprocess's advanced usage.
 import datetime
 import time
 import timeit
+import os
+import subprocess
 
-def popen_timeout(popen_ins, timeout):
+def popen_timeout_wait(popen_ins, timeout):
   '''
   :param popen_ins: the return value of subprocess.Popen()
   :param timeout:
@@ -54,8 +56,9 @@ def timeout_subprocess(*args,**kwargs):
   '''
   timeout=kwargs.pop('timeout',None)
   p_ins = subprocess.Popen(*args,**kwargs)
+
   if timeout is not None:
-    if not popen_timeout(p_ins,timeout):
+    if not popen_timeout_wait(p_ins,timeout):
       # timeout
       popen_kill(p_ins)
   return p_ins
