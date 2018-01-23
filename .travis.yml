@@ -9,25 +9,25 @@ install: "pip install -r requirements.txt"
 script: python list_change_value_inplace.py
 script: python list_check_all_elements_equal.py
 script: python list_global_list_not_use_global_keyword.py
-
+#
 script: python dict_print_chinese_value_print.py
 script: python dict_item_getter.py
-
+#
 script: python class_vs_closure.py
 script: python class_instance_method.py
-
+#
 script: python sort_outer_merge_sort.py
 script: python sort_merge_sort_recursion.py
 script: python sort_merge_sort_no_recursion.py
 script: python sorted_multi_keys.py
-
+#
 script: python iterator_itertools_tee.py
 script: python iterator_peek_iter.py
-
+#
 script: python yield_weired.py
 script: python yield_write_file.py
 script: python yield_normal.py
-
+#
 script: python contextmanager.py
 script: python coroutine_decorator.py
 script: python gz_efficient_write_gzip.py
