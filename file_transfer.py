@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 '''
 this file shows transfer file through 3 machine.
@@ -11,6 +11,8 @@ B is our python script machine
 
 import os
 import subprocess
+import contextlib
+
 
 def solution1():
   '''
@@ -19,23 +21,43 @@ def solution1():
   scp_path_a = 'user@ip:/path'
   scp_path_c = 'user@ip:/path'
   local_path_b = ''
-  files=[]
-  ret_code=-1
+  files = []
+  ret_code = -1
   for f in files:
-    arg1 = os.path.join(scp_path_a,f)
-    arg2 = os.path.join(local_path_b,f)
-    cmds = ['scp',arg1,arg2]
+    arg1 = os.path.join(scp_path_a, f)
+    arg2 = os.path.join(local_path_b, f)
+    cmds = ['scp', arg1, arg2]
     ret_code = subprocess.call(cmds)
 
-  if ret_code==0:
+  if ret_code == 0:
     for f in files:
-      arg1 = os.path.join(local_path_b,f)
-      arg2 = os.path.join(scp_path_c,f)
-      cmds=['scp',arg1,arg2]
+      arg1 = os.path.join(local_path_b, f)
+      arg2 = os.path.join(scp_path_c, f)
+      cmds = ['scp', arg1, arg2]
       ret_code = subprocess.call(cmds)
 
 
-def solution2():
+@contextlib.contextmanager
+def open_remote(host):
+  import paramiko
+
+  '''
+  :param host: (ip,port,username,<password>)
+  :return: SSHClient instance paramiko.sftp_client.SFTPClient
+  '''
+  client = paramiko.SSHClient()
+  client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+  client.connect(*host)
+  sftpv = client.open_sftp()
+
+  try:
+    yield sftpv
+  finally:
+    sftpv.close()
+    client.close()
+
+
+def solution2(hosts, files_from, files_to):
   '''
   If machine B is a Windows, we call install package easy
 
@@ -43,8 +65,9 @@ def solution2():
   :param hosts: [(ip1,port1,user1), (...)]
   :param files_from: [path1,path2, ...]
   :param files_to: [path1,path2, ...]
-
+  :return:
   '''
+
   import paramiko
   import itertools
   import tempfile
@@ -52,62 +75,45 @@ def solution2():
   import errno
   import stat
 
-  hosts=[]
-  files_from=[] # remote path
-  files_to = [] # remote path
-  client_from = paramiko.SSHClient()
-  client_to = paramiko.SSHClient()
+  with open_remote(hosts[0]) as sftp_from:
+    with open_remote(hosts[1]) as sftp_to:
+      for f, t in itertools.izip(files_from, files_to):
 
-  client_from.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-  client_to.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # test exists
+        try:
+          sftp_from.lstat(f)
+        except IOError as er:
+          print('[!] error {} {}'.format(er, f))
+          continue
 
-  client_from.connect(*hosts[0])
-  client_to.connect(*hosts[1])
+        tmpf = tempfile.mkstemp('_ssh')
+        os.close(tmpf[0])
+        tmpf = tmpf[1]
+        sftp_from.get(f, tmpf)
+        m = io_hash_fullpath(tmpf)
+        print('[+] get {} to {} md5={}'.format(f, tmpf, m))
 
-  sftp_from = client_from.open_sftp()
-  sftp_to = client_to.open_sftp()
+        # sftp_to.open(t)
+        # sftp_to.lstat(t)
+        # both return Errno 2 No such file
 
+        # if exists, remove it
+        try:
+          sftp_to.lstat(t)
+          sftp_to.remove(t)
+        except IOError as er:
+          if not (er.errno == errno.ENOENT):
+            raise er
+        sftp_to.put(tmpf, t)
 
-  for f,t in itertools.izip(files_from, files_to):
+        print('[+] put to {}'.format(t))
 
-    # test exists
-    try:
-      sftp_from.lstat(f)
-    except IOError as er:
-      print('[!] error {} {}'.format(er,f))
-      continue
+        # add execute mode
+        with open(tmpf) as fr_tmp:
+          header = fr_tmp.read(4)
+          if header[1::] == 'ELF':
+            st = sftp_to.lstat(t)
+            sftp_to.chmod(t, st.st_mode | stat.S_IEXEC)
 
-    tmpf = tempfile.mkstemp('_ssh')
-    os.close(tmpf[0])
-    tmpf = tmpf[1]
-    sftp_from.get(f,tmpf)
-    m = io_hash_fullpath(tmpf)
-    print('[+] get {} to {} md5={}'.format(f,tmpf,m))
-
-    # sftp_to.open(t)
-    # sftp_to.lstat(t)
-    # both return Errno 2 No such file
-
-    # if exists, remove it
-    try:
-      sftp_to.lstat(t)
-      sftp_to.remove(t)
-    except IOError as er:
-      if not (er.errno == errno.ENOENT):
-        raise  er
-    sftp_to.put(tmpf,t)
-
-    print('[+] put to {}'.format(t))
-
-    # add execute mode for ELF
-    with open(tmpf) as fr_tmp:
-      header = fr_tmp.read(4)
-      if header[1::] == 'ELF':
-        st = sftp_to.lstat(t)
-        sftp_to.chmod(t,st.st_mode |stat.S_IEXEC)
-
-    print('')
-    os.remove(tmpf)
-
-  client_from.close()
-  client_to.close()
+        print('')
+        os.remove(tmpf)
