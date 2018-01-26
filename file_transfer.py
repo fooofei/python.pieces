@@ -57,14 +57,13 @@ def open_remote(host):
     client.close()
 
 
-def solution2(hosts, files_from, files_to):
+def solution2(hosts, files):
   '''
   If machine B is a Windows, we call install package easy
 
   put <files_from> to <files_to>
-  :param hosts: [(ip1,port1,user1), (...)]
-  :param files_from: [path1,path2, ...]
-  :param files_to: [path1,path2, ...]
+  :param hosts:  [(ip1,port1,user1), (ip2,port2,user2)]
+  :param files: [(file1_from,file1_to),(file2_from,file2_to),...]
   :return:
   '''
 
@@ -77,21 +76,20 @@ def solution2(hosts, files_from, files_to):
 
   with open_remote(hosts[0]) as sftp_from:
     with open_remote(hosts[1]) as sftp_to:
-      for f, t in itertools.izip(files_from, files_to):
-
+      for file_from,file_to in files:
         # test exists
         try:
-          sftp_from.lstat(f)
+          sftp_from.lstat(file_from)
         except IOError as er:
-          print('[!] error {} {}'.format(er, f))
+          print('[!] error {} {}'.format(er,file_from))
           continue
 
         tmpf = tempfile.mkstemp('_ssh')
         os.close(tmpf[0])
         tmpf = tmpf[1]
-        sftp_from.get(f, tmpf)
+        sftp_from.get(file_from,tmpf)
         m = io_hash_fullpath(tmpf)
-        print('[+] get {} to {} md5={}'.format(f, tmpf, m))
+        print('[+] get {} to {} md5={}'.format(file_from,tmpf,m))
 
         # sftp_to.open(t)
         # sftp_to.lstat(t)
@@ -99,21 +97,21 @@ def solution2(hosts, files_from, files_to):
 
         # if exists, remove it
         try:
-          sftp_to.lstat(t)
-          sftp_to.remove(t)
+          sftp_to.lstat(file_to)
+          sftp_to.remove(file_to)
         except IOError as er:
           if not (er.errno == errno.ENOENT):
-            raise er
-        sftp_to.put(tmpf, t)
+            raise  er
+        sftp_to.put(tmpf,file_to)
 
-        print('[+] put to {}'.format(t))
+        print('[+] put to {}'.format(file_to))
 
         # add execute mode
         with open(tmpf) as fr_tmp:
           header = fr_tmp.read(4)
           if header[1::] == 'ELF':
-            st = sftp_to.lstat(t)
-            sftp_to.chmod(t, st.st_mode | stat.S_IEXEC)
+            st = sftp_to.lstat(file_to)
+            sftp_to.chmod(file_to,st.st_mode |stat.S_IEXEC)
 
         print('')
         os.remove(tmpf)
