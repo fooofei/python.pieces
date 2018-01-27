@@ -38,3 +38,5 @@ script: python pandas_dataframe_pieces.py
 script: python collections_counter_items.py
 script: python generator_for_list.py
 script: python get_encoding_from_xml_header.py
+
+script: python net_ipaddress.py
