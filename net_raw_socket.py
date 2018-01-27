@@ -5,6 +5,7 @@
 # [python official doc]https://docs.python.org/2/library/struct.html
 # [Raw socket programming in python (Linux)] http://www.binarytides.com/raw-socket-programming-in-python-linux/
 # [浅谈拒绝服务攻击的原理与防御（7）：用Python和C实现syn flood攻击] http://www.freebuf.com/articles/network/130357.html
+# [tcp syn flood]https://gist.github.com/fffaraz/57144833c6ef8bd9d453
 
 # 网络用到的结构字段数据用的是大端传递 python 有两种方法把数据做成大端
 #   1 使用 struct.unpack 输入小端数据
