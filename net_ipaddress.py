@@ -17,10 +17,9 @@
 
 import os
 import sys
-import ipaddress
+
 import unittest
 import socket
-
 
 def ipaddress_pton(arg):
   '''
@@ -94,6 +93,7 @@ class TestCase(unittest.TestCase):
 
 
 def entry():
+  import ipaddress
   i = u'192.0.0.1'
   a = ipaddress.ip_address(i)
 
