@@ -20,14 +20,20 @@ import sys
 import socket
 import struct
 import random
+import unittest
 import ctypes
 from ctypes import c_uint8
 from ctypes import c_uint16
 from ctypes import c_uint32
 
+from net_ipaddress import ipaddress_pton
+
 
 def hex_out(v):
-  return [ord(e) for e in v]
+  '''
+  hex(e)  is  32 -> 0x20
+  '''
+  return [hex(ord(e)) for e in v]
 
 
 def checksum(data):
@@ -43,18 +49,13 @@ def checksum(data):
   return s
 
 
-def iptoint32(ip):
-  return int(socket.inet_aton(ip).encode('hex'), 16)
-
-
-def int32toip(ip):
-  return socket.inet_ntoa(hex(ip)[2:].decode('hex'))
-
-
 class struct_base(ctypes.BigEndianStructure):
   '''
   用于定义网络相关结构体的父类结构体
   封装了几个辅助函数 方便在结构体和网络二进制数据中转换
+
+  这样生成的结构体 字节>1 的赋值应该用大端
+
   '''
 
   def pack(self):
@@ -84,13 +85,16 @@ class IP(struct_base):
 
     ("ttl", c_uint8),
     ("protocol", c_uint8),
-    ("sum", c_uint16),
+    ("checksum", c_uint16),
 
     ("saddr", c_uint32),
     ("daddr", c_uint32),
   ]
 
   def put(self, **kwargs):
+    '''
+    如果没有给值 就用初始值 0，不是 None
+    '''
     self.version = kwargs.get('version', self.version)
     self.ihl = kwargs.get('ihl', self.ihl)
     self.tos = kwargs.get('tos', self.tos)
@@ -100,7 +104,7 @@ class IP(struct_base):
     self.offset = kwargs.get('offset', self.offset)
     self.ttl = kwargs.get('ttl', self.ttl)
     self.protocol = kwargs.get('protocol', self.protocol)
-    self.sum = kwargs.get('sum', self.sum)
+    self.checksum = kwargs.get('checksum', self.checksum)
     self.saddr = kwargs.get('saddr', self.saddr)
     self.daddr = kwargs.get('daddr', self.daddr)
     return self
@@ -179,76 +183,94 @@ class tcpopt_addr(struct_base):
     return self
 
 
-def make(dest_host):
-  source_ip = '192.168.1.101'
+class TestCase(unittest.TestCase):
+  def test_ip(self):
+    s_ip_header = '45 10 00 34 91 e0 40 00 3d 06 c2 5e c0 91 6d 65 b6 66 05 18'
+    hex_ip_header = s_2_hex(s_ip_header)
 
-  # kernel will fill the correct checksum
-  # kernel will fill the correct total length
-  ip_hdr = IP().put(
-    ihl=5,
-    version=4,
-    id=54321,
-    ttl=255,
-    protocol=socket.IPPROTO_TCP,
-    saddr=iptoint32(source_ip),
-    daddr=iptoint32(dest_host[0])
-  )
+    iphdr = IP().put(
+      version=4,
+      ihl=5,
+      tos=0x10,
+      id = 0x91e0,
+      totallen=52,
+      flags=2,
+      offset=0,
+      ttl=61,
+      protocol=socket.IPPROTO_TCP, # 6
+      saddr=ipaddress_pton('192.145.109.101'),
+      daddr=ipaddress_pton('182.102.5.24')
+    )
 
-  tcp_user_data = tcpopt_addr().put(
-    opcode=254,
-    opsize=8,
-    port=88,
-    addr=iptoint32('100.101.102.103')  # see the ip in tcp options
-  )
+    # first get big endian's bytes check sum
+    v = iphdr.pack()
+    csum = checksum(v)
+    v = iphdr.put(checksum=socket.htons(csum)).pack()
 
-  tcp_hdr = TCP().put(
-    source_port=1234,
-    dest_port=dest_host[1],
-    seq=454,
-    doff=5 + ctypes.sizeof(tcp_user_data) / 4,
-    syn=1,
-    window=socket.htons(5840)
-  )
+    v1 = hex_out(hex_ip_header)
+    v2 = hex_out(v)
 
-  tcp_length = len(tcp_hdr.pack()) + len(tcp_user_data.pack())
+    #print(v1)
+    #print(v2)
 
-  # or
-  psh = struct.pack('!IIBBH', ip_hdr.saddr, ip_hdr.daddr,
-                    0, socket.IPPROTO_TCP, tcp_length
-                    )
-  # psh = struct.pack('!4s4sBBH',socket.inet_aton(source_ip),
-  #                  socket.inet_aton(dest_ip),
-  #                  0, socket.IPPROTO_TCP,tcp_length
-  #                  )
+    self.assertEqual(v1,v2)
 
-  psh = psh + tcp_hdr.pack() + tcp_user_data.pack()
-  tcp_check = checksum(psh)
 
-  tcp_hdr.put(checksum=tcp_check)
+  def test_tcp(self):
+    '''
+    tcp option 是 uint8_t kind + uint8_t size + context 的结构
+    当为 nop  kind=1 时 表示占位 无意义 就用 1 个字节
+    '''
+    s_tcp_header = (
+      '00 16 25 e0 07 6e 1e 9e 93 f7 30 d1 80 10 e5 a0 '
+      '10 4c 00 00 01 01 05 0a 93 f7 30 d0 93 f7 30 d1'
+    )
+    # this tcp header contains tcp options
+    # we give the tcp options big endian hex, because this time
+    # we donnot care about it
+    # 01 is the NOP
+    # 01 is the NOP
+    # 05 is kind
+    # 0a is the kind size
+    tcp_options = s_2_hex('01 01 05 0a 93 f7 30 d0 93 f7 30 d1')
 
-  packet = ip_hdr.pack() + tcp_hdr.pack() + tcp_user_data.pack()
+    hex_tcp_header = s_2_hex(s_tcp_header)
+    tcphdr = TCP().put(
+      source_port=22,
+      dest_port=9696, # big endian
+      seq=0x076e1e9e,
+      ack_seq=0x93f730d1,
+      doff=5 + len(tcp_options)/4,
+      ack=1,
+      window=58784, # big endian
+    )
 
-  return packet
+    v1 = hex_out(hex_tcp_header)
+
+    # checksum
+    psh = struct.pack('!IIBBH',ipaddress_pton('192.145.109.101'),
+                    ipaddress_pton('182.102.5.24'),
+                    0, socket.IPPROTO_TCP,len(tcphdr.pack())+len(tcp_options)
+                  )
+    csum = checksum(psh + tcphdr.pack()+tcp_options)
+    tcphdr.put(checksum=socket.htons(csum))
+    v2 = hex_out(tcphdr.pack()+tcp_options)
+
+    #print(v1)
+    #print(v2)
+
+    self.assertEqual(v1,v2)
+
+
+def s_2_hex(s):
+  ss = s.split(' ')
+  h = ''.join(ss)
+  return h.decode('hex')
 
 
 def entry():
-  s = socket.socket(socket.AF_INET, socket.SOCK_RAW, 6)
-  s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-
-  count = 0
-  while 1:
-    count += 1
-    print('[+] sendto count = {count}'.format(count=count))
-
-    dst = ('ip1', 80)
-    packet = make(dst)
-    s.sendto(packet, dst)
-
-    import pdb
-    pdb.set_trace()
-
-  s.close()
+  pass
 
 
 if __name__ == '__main__':
-  pass
+  unittest.main()
