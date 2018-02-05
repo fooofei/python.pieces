@@ -53,6 +53,11 @@ echo "你好<br>是我" | mail  -s "$( echo -e "this is title\nContent-Type: tex
 >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
 [(b'p\xf6stal', 'iso-8859-1')]
 
+
+# Send a base64 image in HTML email
+
+https://stackoverflow.com/questions/16242489/send-a-base64-image-in-html-email/36870709#36870709
+
 '''
 
 
