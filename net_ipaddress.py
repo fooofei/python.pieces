@@ -24,6 +24,7 @@ import sys
 
 import unittest
 import socket
+import struct
 
 def hex_out(v):
   '''
@@ -49,22 +50,42 @@ def ipaddress_ptoh(arg):
     r = r + (pv<<(i*8))
   return  r
 
-def ipaddress_htop(arg):
+def ipaddress_ntop(arg):
   r = []
   for i in range(4):
     v = (arg >> (i * 8)) & 0xFF
     r.append('{0}'.format(v))
   return '.'.join(r)
 
-def ipaddress_ntop(arg):
-    v = socket.ntohl(arg)
-    return ipaddress_htop(v)
+def ipaddress_htop(arg):
+    v = socket.htonl(arg)
+    return ipaddress_ntop(v)
 
 
-def ipaddress_ptoh2(ip):
-  return int(socket.inet_aton(ip).encode('hex'), 16)
+def ipaddress_pton2(p):
+  v1 = socket.inet_aton(p)
+  return struct.unpack('<I',v1)[0]
 
-def ipaddress_htop2(arg):
+def ipaddress_ptoh2(p):
+  v1 = socket.inet_aton(p)
+  return struct.unpack('>I',v1)[0]
+  # 虽然 `>` 是网络序，但 v1 就是网络序,因此会反向
+
+
+def ipaddress_ntop2(n):
+  v = struct.pack('<I',n)
+  return socket.inet_ntoa(v)
+
+def ipaddress_htop2(h):
+  v = struct.pack('>I',h)
+  return socket.inet_ntoa(v)
+
+def ipaddress_ptoh3(p):
+  v1 = socket.inet_aton(p)
+  v2 = v1.encode('hex')
+  return int(v2,16)
+
+def ipaddress_htop3(arg):
   v = hex(arg)[2::]
   v = v.rstrip('L')
   return socket.inet_ntoa(v.decode('hex'))
@@ -75,15 +96,6 @@ def ipaddress_pton_unix(arg):
   inet_pton is only for unix
   '''
   return int(socket.inet_pton(socket.AF_INET,arg).encode('hex'),16)
-
-
-def ipaddress_htop(h):
-  n = socket.htonl(h)
-  return ipaddress_ntop(n)
-
-def ipaddress_ptoh(p):
-  n = ipaddress_pton(p)
-  return  socket.ntohl(n)
 
 
 g_data = [
@@ -103,17 +115,32 @@ class TestCase(unittest.TestCase):
 
     for arg in g_data:
       n1 = ipaddress_pton(arg[0])
-
       self.assertEqual(n1,arg[1])
-
+      p = ipaddress_ntop(n1)
+      self.assertEqual(p,arg[0])
 
     for arg in g_data:
       h1 = ipaddress_ptoh(arg[0])
       self.assertEqual(h1, arg[2])
 
-      h2 = ipaddress_ptoh2(arg[0])
-      self.assertEqual(h2, arg[2])
+      p = ipaddress_htop(h1)
+      self.assertEqual(p,arg[0])
 
+    for arg in g_data:
+      n = ipaddress_pton2(arg[0])
+      self.assertEqual(n,arg[1])
+      p = ipaddress_ntop2(n)
+      self.assertEqual(p,arg[0])
+
+    for arg in g_data:
+      h = ipaddress_ptoh2(arg[0])
+      self.assertEqual(h,arg[2])
+      p=  ipaddress_htop2(h)
+      self.assertEqual(p,arg[0])
+
+    for arg in g_data:
+      h = ipaddress_ptoh3(arg[0])
+      self.assertEqual(h,arg[2])
 
 def entry():
   import ipaddress
@@ -141,7 +168,10 @@ def entry2():
   v2 = hex_out(v1) #  ['0xc0', '0x0', '0x2', '0x1']
   v3 = v1.encode('hex') # 'c0000201'
   v4 = int(v3,16) # 3221225985
-
+  v5 = struct.unpack('<I',v1)[0] #16908480
+  v6 = struct.unpack('>I',v1)[0] # 3221225985
+  v7 = struct.unpack('I',v1)[0] #16908480
+  print(v1,v2,v3,v4,v5,v6,v7)
 
 if __name__ == '__main__':
   unittest.main()
