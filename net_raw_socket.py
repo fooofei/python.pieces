@@ -27,6 +27,7 @@ from ctypes import c_uint16
 from ctypes import c_uint32
 
 from net_ipaddress import ipaddress_pton
+from net_ipaddress import ipaddress_ptoh
 
 
 def hex_out(v):
@@ -54,7 +55,7 @@ class struct_base(ctypes.BigEndianStructure):
   用于定义网络相关结构体的父类结构体
   封装了几个辅助函数 方便在结构体和网络二进制数据中转换
 
-  这样生成的结构体 字节>1 的赋值应该用大端
+  这样生成的结构体 字节>1 的赋值应该用小端 主机序
 
   '''
 
@@ -198,8 +199,8 @@ class TestCase(unittest.TestCase):
       offset=0,
       ttl=61,
       protocol=socket.IPPROTO_TCP, # 6
-      saddr=ipaddress_pton('192.145.109.101'),
-      daddr=ipaddress_pton('182.102.5.24')
+      saddr=ipaddress_ptoh('192.145.109.101'),
+      daddr=ipaddress_ptoh('182.102.5.24')
     )
 
     # first get big endian's bytes check sum
@@ -248,8 +249,8 @@ class TestCase(unittest.TestCase):
     v1 = hex_out(hex_tcp_header)
 
     # checksum
-    psh = struct.pack('!IIBBH',ipaddress_pton('192.145.109.101'),
-                    ipaddress_pton('182.102.5.24'),
+    psh = struct.pack('>IIBBH',ipaddress_ptoh('192.145.109.101'),
+                    ipaddress_ptoh('182.102.5.24'),
                     0, socket.IPPROTO_TCP,len(tcphdr.pack())+len(tcp_options)
                   )
     csum = checksum(psh + tcphdr.pack()+tcp_options)
