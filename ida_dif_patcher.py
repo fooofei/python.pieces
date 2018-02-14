@@ -22,36 +22,42 @@ import sys
 import re
 
 
-def ida_dif_patcher(binary_fullpath, dif_fullpath):
-    code = bytearray(os.path.getsize(binary_fullpath))
-    with open(binary_fullpath, 'rb') as fr:
-        fr.readinto(code)
+def apply_diff(original_fullpath, diff_fullpath):
+  '''
+  :param original_fullpath: the executable while to be patched file
+  :param diff_fullpath:  the diff file
+  '''
+  size = os.path.getsize(original_fullpath)
+  code = bytearray(size)
+  with open(original_fullpath, 'rb') as fr:
+    fr.readinto(code)
 
-    patcher_fullpath = binary_fullpath + u'_patcher'
-    if os.path.exists(patcher_fullpath): os.remove(patcher_fullpath)
+  patched_file = original_fullpath + u'_patched'
+  if os.path.exists(patched_file):
+    os.remove(patched_file)
 
-    with open(dif_fullpath, 'r') as fr:
-        fr.next()  # skip 'This difference file...'
-        fr.next()  # skip empty line
-        fr.next()  # skip binary name
-        for l in fr:
-            l = l.rstrip()
-            dif1 = re.findall('([0-9a-fA-F]+): ([0-9a-fA-F]+) ([0-9a-fA-F]+)', l)
-            assert (len(dif1) == 1)
-            offset, original, patch1 = dif1[0]
-            offset = int(offset, 16)
-            original = int(original, 16)
-            patch1 = int(patch1, 16)
+  with open(diff_fullpath, 'r') as fr:
+    fr.next()  # skip 'This difference file...'
+    fr.next()  # skip empty line
+    fr.next()  # skip binary name
 
-            if code[offset] != original:
-                raise ValueError('patch not right offset={} '
-                                 'original={} code[offset]={}'.format(offset, original, code[offset]))
+    for l in fr:
+      l = l.rstrip()
+      dif1 = re.findall('([0-9a-fA-F]+): ([0-9a-fA-F]+) ([0-9a-fA-F]+)', l)
+      assert (len(dif1) == 1)
+      offset, original, patch1 = dif1[0]
+      offset = int(offset, 16)
+      original = int(original, 16)
+      patch1 = int(patch1, 16)
 
-            code[offset] = patch1
+      if code[offset] != original:
+        raise ValueError('patch not right offset={} '
+                         'original={} code[offset]={}'.format(offset, original, code[offset]))
 
-    with open(patcher_fullpath, 'wb') as fw:
-        fw.write(code)
+      code[offset] = patch1
 
+  with open(patched_file, 'wb') as fw:
+    fw.write(code)
 
 if __name__ == '__main__':
-    ida_dif_patcher(sys.argv[1], sys.argv[2])
+  apply_diff(sys.argv[1], sys.argv[2])
