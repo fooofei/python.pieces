@@ -1,4 +1,17 @@
 
+
+### map reduce 必须把 stdin 枚举完毕， stdout 必须输出
+---
+- in python streaming, sys.stdin must run out, 
+```python
+for line in sys.stdin:
+    continue
+```
+must run to end, cannot break at middle.
+
+- mapreduce must print something, if not, will error occured, report io closed.
+
+
 ### hadoop mr 的参数顺序
 ---
 bin/hadoop command [genericOptions] [commandOptions]
