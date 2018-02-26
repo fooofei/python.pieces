@@ -1,8 +1,10 @@
 
 ### hadoop mr 的参数顺序
+
 bin/hadoop command [genericOptions] [commandOptions]
 先有 genericOptions， 再有 commandOptions，参数顺序不能反 
 Generic options supported are
+```
 -conf <configuration file>  
 -D <property=value>          
 -fs <local|namenode:port>    
@@ -11,7 +13,7 @@ Generic options supported are
 -files <comma separated list of files>   
 -libjars <comma separated list of jars>    
 -archives <comma separated list of archives>   
-
+```
 
 
 ### streaming official doc
