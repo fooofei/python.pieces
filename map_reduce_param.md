@@ -1,6 +1,6 @@
 
 ### hadoop mr 的参数顺序
-
+---
 bin/hadoop command [genericOptions] [commandOptions]
 先有 genericOptions， 再有 commandOptions，参数顺序不能反 
 Generic options supported are
@@ -17,11 +17,13 @@ Generic options supported are
 
 
 ### streaming official doc
+---
 https://hadoop.apache.org/docs/r1.0.4/cn/streaming.html
 
 
 
-mr 流程 
+mr 流程
+---
 Map -> Combiner -> Partitioner -> Sort -> Shuffle -> Sort -> Reduce
 https://community.hortonworks.com/questions/14328/what-is-the-difference-between-partitioner-combine.html
 
@@ -54,6 +56,7 @@ KeyFieldBasePartitioner 跟排序相关
 
 
 ### 几个上传压缩包的方法
+---
 文件打包上传方法(HDFS 缓存文件上传)，mr 自动解压，访问这个目录使用 .pypy, 末尾 #pypy 的意思是解压到 pypy 名字的目录
 
 '-cacheArchive', '/home/share/pypy.tar.gz#pypy',
@@ -122,11 +125,12 @@ https://stackoverflow.com/questions/26647946/how-recursively-use-a-directory-str
 
 
 ### portable pypy for mapreduce
-
+---
 download from  https://github.com/squeaky-pl/portable-pypy
 
 
 一个短篇：批量输入目录的两种方式
+
 要输入 /home/day=201609 一个月内所有日志，可以有：
 1 '-D', 'mapred.input.dir.recursive=true', 设置递归，然后 input=/home/day=201609* 即可，
 中间某一天目录为空，没有输入也会被忽略。
