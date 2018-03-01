@@ -104,7 +104,7 @@ def solution2(hosts, files):
             raise  er
         sftp_to.put(tmpf,file_to)
 
-        print('[+] put to {}'.format(file_to))
+        print('[+] put to {rh}:{rp}'.format(rh=hosts[1],rp=file_to))
 
         # add execute mode
         with open(tmpf) as fr_tmp:
