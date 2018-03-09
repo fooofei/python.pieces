@@ -5,6 +5,15 @@ the file shows a more efficient way to write a gzip file
 
 recommended use io.BufferedWriter
 
+ref http://aripollak.com/pythongzipbenchmarks/
+
+
+not support Python2.6
+   File "/usr/lib64/python2.6/io.py", line 1029, in __init__
+    raw._checkWritable()
+  AttributeError: GzipFile instance has no attribute '_checkWritable'
+
+
 '''
 
 import os
