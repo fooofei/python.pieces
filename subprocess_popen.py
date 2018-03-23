@@ -63,6 +63,12 @@ def _exec_check_output(*args, **kwargs):
   v = v.decode('utf-8')
   return v
 
+def get_popen_args():
+  args=['ls','.']
+  p = subprocess.Popen(args)
+  print('the args is {}'.format(p.args))  # Python3
+
+  # Python2 别想了 没机会
 
 if __name__ == '__main__':
   amr2avi()
