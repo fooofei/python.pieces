@@ -63,6 +63,8 @@ def timeout_subprocess(*args,**kwargs):
       popen_kill(p_ins)
   return p_ins
 
+def popen_isalive(p):
+  return  p.poll() is None
 
 
 
