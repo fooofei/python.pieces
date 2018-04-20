@@ -46,6 +46,7 @@
       python -m pip install cx_Freeze --upgrade
       $ cxfreeze pycore.py
       测试不适合这样使用 携带的文件太多了
+      而且与平台绑定  python 的跨平台优势就没了
 
 '''
 
