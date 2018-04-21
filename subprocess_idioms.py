@@ -144,15 +144,13 @@ def popen_queue_get_nowait(pq):
 
 
 def _popen_bind_realtime_stdout_thread_func(out, queue):
-    ''' MUST use Popen(bufsize=1, stdout=PIPE)
-    '''
     for line in iter(out.readline, b''):
         queue.put(line)
     out.close()
 
 def popen_bind_realtime_stdout(popen_ins):
     ''' 非阻塞 实时显示子进程的 stdout
-    MUST use Popen(bufsize=1, stdout=PIPE)
+    MUST use Popen(stdout=PIPE)
     '''
     q = mQueue.Queue()
     t = threading.Thread(target=_popen_bind_realtime_stdout_thread_func, args=(popen_ins.stdout, q))
@@ -244,7 +242,16 @@ class TestCase(unittest.TestCase):
         :return:
         '''
         cmd = ['python',os.path.join(curpath,'subproc_fortest.py')]
-        p = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE, stderr=subprocess.PIPE,bufsize=1)
+
+        p = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE, stderr=subprocess.PIPE,bufsize=1,
+                             close_fds='posix' in sys.builtin_module_names)
+        # if `stdout=subprocess.STDOUT, stderr=subprocess.STDOUT`
+        #   will error IOError: [Errno 9] Bad file descriptor
+
+        # bufsize default is 0, it work
+        # bufsize is 1, it work
+        # bufsize is -1, use systemdefault, it work
+
         print('[+] exec {c} pid={p}'.format(c=subprocess.list2cmdline(cmd),p=p.pid))
         pq = popen_bind_realtime_stdout(p)
 
