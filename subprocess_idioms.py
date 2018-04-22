@@ -51,6 +51,29 @@
 5 运行的时候发现的，如果对此脚本使用 CTRL+C ，那么这个脚本的 subprocess 也会收到 CTRL+C
   然后结束子进程结束
 
+6  subprocess.check_call() subprocess.check_output()  两个都是对 subprocess.Popen 的简单封装
+    check_call() 只检查子进程结束的返回值
+    check_output() 在检查子进程结束的返回值的同时也把子进程的输出提供出来
+
+7 命令中包含通配符 Wildcards ，包括 . 号
+  这样会报错
+  output = subprocess.Popen(['ls', '*'],
+  stdout=subprocess.PIPE).communicate()[0]
+  ls: *: No such file or directory
+
+  有人说用 glob ，这样会把 * 解释一遍，包含什么文件都放到 list 里，我发现用这个缺陷，
+  比如我有个命令 tar czvf 1.tar.gz * 这样能压缩一个相对路径，用了 glob 后就成了绝对路径，
+  不符合预期。
+
+  只能通过
+  output = subprocess.Popen(['ls', '*'], shell=True) 解决
+  有时候这个也不行 要这样才行
+  output = subprocess.Popen(subprocess.list2cmdline(['ls', '*']), shell=True)
+
+  也不一定好用， tar 就不好用
+  老老实实 change current dir 吧
+
+
 '''
 
 import subprocess
@@ -126,7 +149,6 @@ def popen_kill(popen_ins):
         time.sleep(3)
 
 
-
 def popen_queue_get_nowait(pq):
     ''' 非阻塞 从 Popen 绑定的队列取 output
    :param pq: 与 Popen 绑定的 Queue
@@ -148,6 +170,7 @@ def _popen_bind_realtime_stdout_thread_func(out, queue):
         queue.put(line)
     out.close()
 
+
 def popen_bind_realtime_stdout(popen_ins):
     ''' 非阻塞 实时显示子进程的 stdout
     MUST use Popen(stdout=PIPE)
@@ -157,6 +180,7 @@ def popen_bind_realtime_stdout(popen_ins):
     t.daemon = True
     t.start()
     return q
+
 
 def test_popen_timeout(*args, **kwargs):
     '''
@@ -202,6 +226,20 @@ def test_check_output(*args, **kwargs):
     return v
 
 
+def subprocess_output(*args, **kwargs):
+    ''' 提供出 subprocess 的 stdout
+     与subprocess.check_output() 不同的是没有异常
+    没有直接使用 subprocess.check_output()，这个是在 python 2.7 加入的
+    output is str, not list
+    '''
+    if 'stdout' in kwargs or 'stderr' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    return output, retcode
+
+
 class TestCase(unittest.TestCase):
 
     def test_process_age(self):
@@ -241,9 +279,9 @@ class TestCase(unittest.TestCase):
 
         :return:
         '''
-        cmd = ['python',os.path.join(curpath,'subproc_fortest.py')]
+        cmd = ['python', os.path.join(curpath, 'subproc_fortest.py')]
 
-        p = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE, stderr=subprocess.PIPE,bufsize=1,
+        p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1,
                              close_fds='posix' in sys.builtin_module_names)
         # if `stdout=subprocess.STDOUT, stderr=subprocess.STDOUT`
         #   will error IOError: [Errno 9] Bad file descriptor
@@ -252,10 +290,10 @@ class TestCase(unittest.TestCase):
         # bufsize is 1, it work
         # bufsize is -1, use systemdefault, it work
 
-        print('[+] exec {c} pid={p}'.format(c=subprocess.list2cmdline(cmd),p=p.pid))
+        print('[+] exec {c} pid={p}'.format(c=subprocess.list2cmdline(cmd), p=p.pid))
         pq = popen_bind_realtime_stdout(p)
 
-        count =0
+        count = 0
 
         while True:
 
@@ -263,16 +301,16 @@ class TestCase(unittest.TestCase):
 
             if not popen_isalive(p):
                 print('[!] subproc pid={p} arg={a} is dead, we exit'
-                    .format(p=p.pid,a=subprocess.list2cmdline(cmd)))
+                    .format(p=p.pid, a=subprocess.list2cmdline(cmd)))
                 break
 
             if out:
                 print('[+] we get out put from {c}'.format(c=subprocess.list2cmdline(cmd)))
-                out = map(str,out)
-                out = map(lambda e:'->'+e,out)
+                out = map(str, out)
+                out = map(lambda e: '->' + e, out)
                 sys.stdout.write(''.join(out))
 
-            count +=1
+            count += 1
             sys.stdout.write('[+] test_realtime_stdout is checking, we not blocked count={c}\n'.format(c=count))
             sys.stdout.flush()
 

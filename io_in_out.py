@@ -65,7 +65,7 @@ else:
 io_str_codecs = (io_text_type, io_binary_type)
 io_terminal_encoding = 'utf-8'
 if sys.stdout.isatty(): io_terminal_encoding = sys.stdout.encoding
-io_filesystem_encoding = sys.getfilesystemencoding() # operating system depending encoding
+io_filesystem_encoding = sys.getfilesystemencoding()  # operating system depending encoding
 
 
 def io_text_arg(arg, encoding=None, pfn_check=None):
@@ -357,6 +357,17 @@ def io_directory_merge(src, dst):
     # 如果文件存在会自动覆盖
     copy_tree(src=src, dst=os.path.join(dst, os.path.basename(src)))
     remove_tree(directory=src)
+
+
+def shutil_force_copy(src, dest):
+    '''EAFP way, avoid races and unneeded syscalls'''
+    try:
+        shutil.copy(src, dest)
+    except IOError as er:
+        if er.errno != errno.ENOENT:
+            raise
+        os.makedirs(os.path.dirname(dest))
+        shutil.copy(src, dest)
 
 
 def io_hash_stream(stream, hash_algorithm=u'md5', block_size=2 ** 20):
