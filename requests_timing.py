@@ -14,6 +14,21 @@ https://github.com/kennethreitz/grequests
 请使用 taskset -c 设定CPU亲和性执行
 taskset -c 10-34  python /data/tools/to-om-attack.py
 
+其他库 
+https://github.com/requests/requests-threads
+https://github.com/ross/requests-futures
+https://github.com/littlecodersh/trip/    
+
+https://centos.pkgs.org/7/epel-x86_64/python2-futures-3.0.5-1.el7.noarch.rpm.html
+requests_futures 是异步的，那它是协程的吗？只是在创建线程池？那创建线程池的数目能跟协程（1500）比吗？
+去试试 这么想 线程也行， 线程的话他能实时响应，基于事件的协程可能会有太多中断
+
+CentOS 离线没有 pip 的情况下安装 rpm
+https://centos.pkgs.org/7/epel-x86_64/python2-futures-3.0.5-1.el7.noarch.rpm.html
+
+grequest 和 requests-futures 讨论
+https://stackoverflow.com/questions/9110593/asynchronous-requests-with-python-requests
+
 '''
 import os
 import sys
