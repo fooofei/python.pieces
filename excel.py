@@ -22,6 +22,8 @@ openpyxl 只能处理 xlsx 更新的office 类型 不支持 xls
 
 https://stackoverflow.com/questions/26957831/edit-existing-excel-workbooks-and-sheets-with-xlrd-and-xlwt
 
+20180623 看到了 xlwings 这个 以后有机会试用
+
 '''
 
 import os
