@@ -18,6 +18,15 @@
 
 这条路行不通
 
+测试发现循环 创建socket close socket ，使用的是同一个文件描述符，fd相等，不会因为打开文件过多无法创建socket
+
+
+tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
+
+tcp client 怎么知道 server 不在了？ client send 收到 SIGPIPE 消息，但是 send 会带标记忽略这个消息
+所以当 send 出错 我就选择不信任这个会话连接了
+
+
 '''
 
 import os
@@ -54,11 +63,22 @@ def entry():
     sfd.listen(5)
     print('[+] bind to {}'.format(addr))
     while True:
-        cfd,addr = sfd.accept()
-
+        cfd,caddr = sfd.accept()
+        print('[+] accept from {}'.format(caddr))
         while True:
+            # 当 client 关闭 socket 时 这里就一直受信
+            # https://docs.python.org/2/howto/sockets.html
+            # 这里说 recv 返回 0 bytes 的时候，就是对方 close 的时候
+            # when a recv returns 0 bytes, it means the other side has closed
+            # (or is in the process of closing) the connection.
+            # You will not receive any more data on this connection.
+            # Ever. You may be able to send data successfully; I’ll talk more about this later.
             data = cfd.recv(1024)
-            print(binascii.hexlify(data))
+            if b''== data:
+                print('[!] client {} is broken'.format(caddr))
+                break
+            print('recv length={} {}'.format(len(data),data))
+
 
 if __name__ == '__main__':
     entry()
