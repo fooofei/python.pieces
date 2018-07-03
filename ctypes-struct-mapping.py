@@ -58,8 +58,10 @@ def entry():
 
   c = binascii.unhexlify(b)
 
+  # 这个虽然有1次内存拷贝 但是还是推荐这种形式
   d = Flow.from_buffer_copy(c)
 
+  # 这个投机取巧 没有内存拷贝 但是性能不一定好
   e = ctypes.POINTER(Flow).from_buffer_copy(c)
 
   print(e[0])

@@ -34,6 +34,8 @@ import sys
 import SocketServer
 import binascii
 import socket
+import ctypes
+import json
 
 def hexlify(value):
     return (format(v,'02x') for v in value)
@@ -59,12 +61,18 @@ def entry1():
 def entry():
     addr = ('0.0.0.0', 44444)
     sfd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    # socket.error: [Errno 22] Invalid argument
+    #sfd.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
     sfd.bind(addr)
     sfd.listen(5)
     print('[+] bind to {}'.format(addr))
+
     while True:
         cfd,caddr = sfd.accept()
         print('[+] accept from {}'.format(caddr))
+
         while True:
             # 当 client 关闭 socket 时 这里就一直受信
             # https://docs.python.org/2/howto/sockets.html
@@ -78,6 +86,7 @@ def entry():
                 print('[!] client {} is broken'.format(caddr))
                 break
             print('recv length={} {}'.format(len(data),data))
+
 
 
 if __name__ == '__main__':
