@@ -20,19 +20,24 @@ import socket
 def entry():
 
     addr = ('127.0.0.1',6666)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cfd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    cfd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,20*1024*1024)
 
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,20*1024*1024)
-
-    sock.sendto('you can send msg', addr)
+    cfd.sendto('you can send msg', addr)
     c = 0
     while True:
         try:
-            data,addr = sock.recvfrom(1024)
-            if data=='end':
-                break
+            data,addr = cfd.recvfrom(1024)
+            # UDP 无顺序 不能这样做结束判定
+            #if data=='end':
+            #    break
             # print('[{c}] {dt}'.format(c=c,dt=data))
             c += 1
+
+            if c % 1000 ==0:
+                print('rcv {}'.format(c))
+
         except KeyboardInterrupt:
             break
     print('recv {c} msgs'.format(c=c))
