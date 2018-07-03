@@ -24,7 +24,12 @@
 tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
 
 tcp client 怎么知道 server 不在了？ client send 收到 SIGPIPE 消息，但是 send 会带标记忽略这个消息
-所以当 send 出错 我就选择不信任这个会话连接了
+所以当 send 出错 errno=EPIPE 我就选择不信任这个会话连接了
+特别注意，当 connect 成功，client 没有主动去探测 server时，直接send，第一次是调用返回成功，第二次是返回失败
+会损失一次数据，见这里 https://stackoverflow.com/questions/12299549/tcp-socket-detect-if-peer-has-shut-down-before-sending-linux
+查资料找到了 SO_KEEPALIVE https://notes.shichao.io/unp/ch7/ 选项可能符合我们的需要，但是发现也不符合，这个选项的心跳不可靠。
+见 https://blog.csdn.net/ctthuangcheng/article/details/8596818
+对于我们100k pps send 的场景，心跳并不及时
 
 
 '''
