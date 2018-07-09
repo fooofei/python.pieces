@@ -2,35 +2,39 @@
 
 '''
 
-做 TCP socket client 时， 如果 server 关闭连接，client 接收到 SIGPIPE 信号，
-会结束进程， 在send 时使用 flags=MSG_NOSIGNAL 把这个错误通过返回值来解决
+tcp client 在 send 时如何知道 server 不可用？
 
-这时候还想重用 socket file descriptor 为了 avoid Too many files open 错误
+    做 TCP socket client 时， 如果 server 关闭连接（recv端），client send 接收到 SIGPIPE 信号，
+    会结束进程， 在send 时使用 flags=MSG_NOSIGNAL 把这个错误通过返回值来解决（返回-1， errno=EPIPE）
+    特别注意，当 connect 成功，client 没有主动去探测 server时，直接send，第一次是调用返回成功，第二次是返回失败
+    会损失一次数据，见这里 https://stackoverflow.com/questions/12299549/tcp-socket-detect-if-peer-has-shut-down-before-sending-linux
+    查资料找到了 SO_KEEPALIVE https://notes.shichao.io/unp/ch7/ 选项可能符合我们的需要，但是发现也不符合，这个选项的心跳不可靠。
+    见 https://blog.csdn.net/ctthuangcheng/article/details/8596818
+    对于我们100k pps send 的场景，心跳并不及时
 
-我尝试了
-    value = 1;
-    setsockopt(s->sockfd, SOL_SOCKET, SO_REUSEPORT, &value, sizeof(value));
-    setsockopt(s->sockfd, SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
-    setsockopt(s->sockfd, SOL_SOCKET, SO_LINGER, &value, sizeof(value));
+tcp server 在 recv 时如何知道 client 不可用？
 
-在知道 socket 无法发送数据的时候， shutdown(sockfd, SHUT_RDWR);
-然后继续 connect 也会失败，错误 #define EISCONN     106 /* Transport endpoint is already connected */
+  python 中 tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
 
-这条路行不通
+tcp socket file descriptor 重用
+    在 socket 不可用时，想重用 socket file descriptor 为了 avoid Too many files open 错误
 
-测试发现循环 创建socket close socket ，使用的是同一个文件描述符，fd相等，不会因为打开文件过多无法创建socket
+    我尝试了
+        value = 1;
+        setsockopt(s->sockfd, SOL_SOCKET, SO_REUSEPORT, &value, sizeof(value));
+        setsockopt(s->sockfd, SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
+        setsockopt(s->sockfd, SOL_SOCKET, SO_LINGER, &value, sizeof(value));
 
+    在知道 socket 无法发送数据的时候， shutdown(sockfd, SHUT_RDWR);
+    然后继续 connect 也会失败，错误 #define EISCONN     106 /* Transport endpoint is already connected */
 
-tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
+    这条路行不通
 
-tcp client 怎么知道 server 不在了？ client send 收到 SIGPIPE 消息，但是 send 会带标记忽略这个消息
-所以当 send 出错 errno=EPIPE 我就选择不信任这个会话连接了
-特别注意，当 connect 成功，client 没有主动去探测 server时，直接send，第一次是调用返回成功，第二次是返回失败
-会损失一次数据，见这里 https://stackoverflow.com/questions/12299549/tcp-socket-detect-if-peer-has-shut-down-before-sending-linux
-查资料找到了 SO_KEEPALIVE https://notes.shichao.io/unp/ch7/ 选项可能符合我们的需要，但是发现也不符合，这个选项的心跳不可靠。
-见 https://blog.csdn.net/ctthuangcheng/article/details/8596818
-对于我们100k pps send 的场景，心跳并不及时
+    测试发现循环 创建socket close socket ，使用的是同一个文件描述符，fd相等，不会因为打开文件过多无法创建socket
 
+close socket 讨论
+  TCP RST: Calling close() on a socket with data in the receive queue
+  http://cs.baylor.edu/~donahoo/practical/CSockets/TCPRST.pdf
 
 '''
 
