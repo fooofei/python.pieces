@@ -12,6 +12,8 @@ tcp client 在 send 时如何知道 server 不可用？
     见 https://blog.csdn.net/ctthuangcheng/article/details/8596818
     对于我们100k pps send 的场景，心跳并不及时
 
+    python 不是通过 errno 处理的，会有异常 socket.error: [Errno 32] Broken pipe
+
 tcp server 在 recv 时如何知道 client 不可用？
 
   python 中 tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
