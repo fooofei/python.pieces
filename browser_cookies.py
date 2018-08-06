@@ -4,6 +4,16 @@
 the file shows how to get cookies from Chrome browser installed machine.
 
 pycookiecheat 只支持 macOS linux 只支持 python3+
+pip3 install pycookiecheat
+安装错误
+ C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\ucrt\inttypes.h(27): error C2061: 语法错误: 标识符“intmax_t”
+    C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\ucrt\inttypes.h(28): error C2061: 语法错误: 标识符“rem”
+    C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\ucrt\inttypes.h(28): error C2059: 语法错误:“;”
+    C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\ucrt\inttypes.h(29): error C2059: 语法错
+
+在安装之前执行
+set CL=/FI "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.14.26428\include\stdint.h" %CL%
+然后再安装
 
 '''
 
