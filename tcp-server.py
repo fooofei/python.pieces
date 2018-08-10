@@ -40,6 +40,7 @@ close socket 讨论
 
 tcp socket 是 stream-oriented,  就是需要自己处理消息边界.
 那 TLS on TCP 是 stream-oriented 还是 message-oriented 的呢？
+TLS 存在 record 是解决这个问题的
 
 '''
 
