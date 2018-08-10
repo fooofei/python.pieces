@@ -38,6 +38,9 @@ close socket 讨论
   TCP RST: Calling close() on a socket with data in the receive queue
   http://cs.baylor.edu/~donahoo/practical/CSockets/TCPRST.pdf
 
+tcp socket 是 stream-oriented,  就是需要自己处理消息边界.
+那 TLS on TCP 是 stream-oriented 还是 message-oriented 的呢？
+
 '''
 
 import os
