@@ -187,11 +187,11 @@ class Toa(BaseSt):
 
 
 
-class Ipv4ChkSumHdr(BaseSt):
+class Ipv4PseudoHdr(BaseSt):
     _pack_=1
     _fields_=[
-        ('dstAddr', c_uint32),
         ('srcAddr', c_uint32),
+        ('dstAddr', c_uint32),
         ('rsv', c_uint8),
         ('protocol', c_uint8),
         ('protocolSize', c_uint16)
@@ -245,6 +245,7 @@ class TestCase(unittest.TestCase):
         # 05 is kind
         # 0a is the kind size
         toaHexStream = ('0101050a93f730d093f730d1')
+        toaBytes = unhexlify(toaHexStream)
         toa,toaRestHexStream = Toa.unpack(toaHexStream)
 
         # 这个 tcpHdr 包含的 toa 和 IpHdr.srcAddr Iphdr.dstAddr 都会加入计算 chksum
@@ -253,26 +254,31 @@ class TestCase(unittest.TestCase):
             dest_port=9696,  # big endian
             seq=0x076e1e9e,
             ack_seq=0x93f730d1,
-            doff=5 + len(hexlify(toaHexStream)) / 4,
+            doff=5 + len(toaBytes) / 4,
             ack=1,
             window=58784,  # big endian
         )
 
 
         # checksum
-        ipv4ChkSumHdr = Ipv4ChkSumHdr()
-        ipv4ChkSumHdr.dstAddr = ipaddress_ptoh('192.145.109.101')
-        ipv4ChkSumHdr.srcAddr = ipaddress_ptoh('182.102.5.24')
+        ipv4ChkSumHdr = Ipv4PseudoHdr()
+        ipv4ChkSumHdr.srcAddr = ipaddress_ptoh('192.145.109.101')
+        ipv4ChkSumHdr.dstAddr = ipaddress_ptoh('182.102.5.24')
         ipv4ChkSumHdr.protocol = IPPROTO_TCP
-        ipv4ChkSumHdr.protocolSize = sizeof(tcpHdr) + sizeof(toa)
+        ipv4ChkSumHdr.protocolSize = sizeof(tcpHdr) + len(toaBytes)
 
-        csum = checksum(ipv4ChkSumHdr.pack() + tcpHdr.pack() + toa.pack())
-        print('Got csum = {} 0x{:x}'.format(csum, csum))
+        tcpHdr1,restBytes = TcpHdr.unpack(tcpHdrHexStream)
+
+        csum = checksum(ipv4ChkSumHdr.pack() + tcpHdr.pack() + toaBytes)
         tcpHdr.checksum = htons(csum)
+
         # print(v1)
         # print(v2)
-        v = tcpHdr.pack() + toa.pack()
-        v = hexlify(v) + toaRestHexStream
+        v = tcpHdr.pack() + toaBytes
+        v= hexlify(v)
+
+
+
         self.assertEqual(tcpHdrHexStream,v)
 
 
