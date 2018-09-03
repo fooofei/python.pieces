@@ -13,10 +13,12 @@ tcp client 在 send 时如何知道 server 不可用？
     对于我们100k pps send 的场景，心跳并不及时
 
     python 不是通过 errno 处理的，会有异常 socket.error: [Errno 32] Broken pipe
+    c 语言 是 send() != sendsize, errno == EPIPE
 
 tcp server 在 recv 时如何知道 client 不可用？
 
   python 中 tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
+  c recv(sock, &buf, 1, MSG_PEEK | MSG_DONTWAIT) ==0  
 
 tcp socket file descriptor 重用
     在 socket 不可用时，想重用 socket file descriptor 为了 avoid Too many files open 错误
@@ -42,6 +44,18 @@ tcp socket 是 stream-oriented,  就是需要自己处理消息边界.
 那 TLS on TCP 是 stream-oriented 还是 message-oriented 的呢？
 TLS 存在 record 是解决这个问题的
 
+一个 socket fd 设置为 no-block 的几种方式
+
+1 socket() 创建句柄附带参数 SOCK_NONBLOCK   
+  或者 accept4() 附带这个参数
+  
+2 存在 socketfd （句柄）之后，使用 
+   int flags = fcntl(fd, F_GETFL, 0);
+   fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+   另一种非posix标准的调用是
+   ioctl(sockfd, FIONBIO, &noBlockOn=TRUE)
+
+3 send recv 附带标记 MSG_DONTWAIT
 '''
 
 import os
