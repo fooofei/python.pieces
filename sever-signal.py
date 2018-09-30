@@ -14,10 +14,11 @@ def entry():
         # SIGTERM is [systemctrl stop ] signal
         signal.signal(signal.SIGTERM, _signal_handler)
         # SIGINT is CTRL+C
+        signal.signal(signal.SIGINT, _signal_handler)
         # signal.signal(9, daemon_stop_signals) #signal.SIGKILL # cannot be catch
-        signal.signal(signal.SIGILL, _stop_signals)
-        signal.signal(signal.SIGABRT, _stop_signals)
-        signal.signal(3, _stop_signals)  # signal.SIGQUIT
+        signal.signal(signal.SIGILL, _signal_handler)
+        signal.signal(signal.SIGABRT, _signal_handler)
+        signal.signal(3, _signal_handler)  # signal.SIGQUIT
 
 
         while True:
