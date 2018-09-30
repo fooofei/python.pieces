@@ -23,6 +23,14 @@ socket(PF_PACKET, SOCK_RAW )
 
 2 AF_INET PF_PACKET 区别  发现 PF_PACKET 重在接收报文上
 
+
+https://github.com/AlexisTM/rawsocket_python
+
+# how to detect SOCK_RAW support or not
+    # https://docs.microsoft.com/zh-cn/windows/desktop/WinSock/tcp-ip-raw-sockets-2
+    # see Limitations on Raw Sockets
+Windows7 不支持RAW socket 发送 TCP， 要用winpcap，python 有 winpcapy
+
 '''
 
 import socket
@@ -30,8 +38,23 @@ import binascii
 
 def send_packet_af_inet_raw(packet, dst_ip):
     sockfd = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-    sockfd.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-
+    
+    # 20180911 使用心得
+    # IPPROTO_RAW 自己会 IP_HDRINCL=1, 如果我们继续 IP_HDRINCL=1，会导致发不出报文，还不知道原因
+    #sockfd.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    # IP_HDRINCL 应该是搭配IPPROTO_TCP/IPPROTO_UDP 使用
+    
+    # 查到资料，有以下两种方式发送ip报文
+    #  sockfd = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+    #  sockfd.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    # or
+    #  sockfd = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+    # 在 Windows 上第一个方法报错 socket.error: [Errno 10022]  https://stackoverflow.com/questions/32590031/socket-error-errno-10022-when-using-socket-sendpacket-ip-port
+    # 还不知道 sockfd = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP) 是什么用法
+    # 这俩都能发出报文来 Windows 发出来的报文不对，不是自己的 IP头
+    # Windows 不支持 SOCK_RAW https://stackoverflow.com/questions/19029110/why-the-packets-cant-be-sent-by-raw-socket-under-windows
+    
+   
     # dst should be
     #memset( & sin, 0, sizeof(struct sockaddr_in));
     #sin.sin_family = AF_INET;
