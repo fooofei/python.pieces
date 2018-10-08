@@ -13,6 +13,13 @@ IPC 通讯使用 UDP 讨论 https://stackoverflow.com/questions/39338588/is-udp-
 
 新的想法是使用 Unix Domain Socket
 
+
+测试 send 一侧探测对方端口不在了
+1 send 一侧 不管 recv 一侧在不在 都能send，返回值都是正确的
+2 recv 一侧 在send一侧，端口bind后，发送数据前，recv MSG_DONTWAIT 错误为
+    socket.error: [Errno 35] Resource temporarily unavailable
+  在 send一侧关闭时，recv 一样的错误，没有办法感知对方端口是否存在
+
 '''
 
 import socket
