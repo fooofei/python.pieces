@@ -20,6 +20,8 @@ IPC 通讯使用 UDP 讨论 https://stackoverflow.com/questions/39338588/is-udp-
     socket.error: [Errno 35] Resource temporarily unavailable
   在 send一侧关闭时，recv 一样的错误，没有办法感知对方端口是否存在
 
+如果 udp recvfrom 传递空间大小不够会有错误 errno = 10040
+
 '''
 
 import socket
@@ -35,11 +37,11 @@ def entry():
     c = 0
     while True:
         try:
-            data,addr = cfd.recvfrom(1024)
+            data,addr = cfd.recvfrom(10)
             # UDP 无顺序 不能这样做结束判定
             #if data=='end':
             #    break
-            # print('[{c}] {dt}'.format(c=c,dt=data))
+            print('[{c}] {dt}'.format(c=c,dt=data))
             c += 1
 
             if c % 1000 ==0:

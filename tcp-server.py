@@ -20,6 +20,8 @@ tcp server 在 recv 时如何知道 client 不可用？
   python 中 tcp server 如何知道 client 不在了？ server recv 返回 '' 表示 client 不在了
   c recv(sock, &buf, 1, MSG_PEEK | MSG_DONTWAIT) ==0  
 
+  no-block socket（例如给fd设置no-block 或者 recv( MSG_DONTWAIT)）,如果 rc=-1, errno = EAGAIN ||EWOULDBLOCK
+  可以说明 socket 数据当前可被取用的数据已经被取用完毕。
 tcp socket file descriptor 重用
     在 socket 不可用时，想重用 socket file descriptor 为了 avoid Too many files open 错误
 

@@ -5,6 +5,7 @@ import sys
 import threading
 import socket
 import timeit
+from time import sleep
 
 def basic():
     addr = ('127.0.0.1',6666)
@@ -25,7 +26,6 @@ def basic():
     sfd.sendto('end',rvaddr)
     print('Alread sent {c} msgs'.format(c=i))
 
-import time
 
 def _thread_func(v):
     begin = timeit.default_timer()
@@ -36,7 +36,7 @@ def _thread_func(v):
         if elapse>0:
             cnt = v[1]
             print('--> {}/{}={}'.format(cnt, elapse, cnt/elapse))
-        time.sleep(2)
+        sleep(2)
 
 def entry():
     addr = ('127.0.0.1',6666)
@@ -58,6 +58,9 @@ def entry():
         while True:
             sfd.sendto("hello"*110, rvaddr)
             args[1]+=1
+            import pdb
+            pdb.set_trace()
+
     except KeyboardInterrupt:
         pass
     finally:
