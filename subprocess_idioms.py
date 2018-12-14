@@ -74,6 +74,11 @@
   老老实实 change current dir 吧
 
 
+8 Python2.7 能直接执行 subprocess.Popen(['command','-v','git']) 返回 ('/usr/bin/systemctl\n', 0)
+        如果待测试命令不在机器上，就返回 (None,1)
+    Python2.6 直接抛出异常，不管待测试命令是否在机器上。 要使用 shell=True
+    git_exits = subprocess.Popen(list2cmd['command','-v','git'], shell=True)
+
 '''
 
 import subprocess
