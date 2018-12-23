@@ -19,7 +19,7 @@ def entry():
         signal.signal(signal.SIGILL, _signal_handler)
         signal.signal(signal.SIGABRT, _signal_handler)
         signal.signal(3, _signal_handler)  # signal.SIGQUIT
-
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
         while True:
             time.sleep(1)
