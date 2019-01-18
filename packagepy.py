@@ -130,11 +130,11 @@ if __name__ == "__main__":
     a= os.path.realpath(__file__)
     a = os.path.dirname(a)
 
-    b = os.path.join(a,'gamecc_conf.usage.py.pyz')
+    b = os.path.join(a,'xx.usage.py.pyz')
     if os.path.exists(b):
         os.remove(b)
 
-    sys.argv.append(os.path.join(a,'gamecc_conf.usage.py'))
+    sys.argv.append(os.path.join(a,'xx.usage.py'))
     sys.argv.append(b)
 
     if len(sys.argv) != 3:
