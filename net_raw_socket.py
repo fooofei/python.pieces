@@ -11,6 +11,8 @@
 #   1 使用 struct.unpack 输入小端数据
 #   2 使用 ctypes.BigEndianStructure 赋值后直接是大端数据
 
+# python dpkt lib 
+
 # ------------------------------------------------------------------------------
 # CHANGELOG:
 # 2018-01-23 not test struct_base.unpack()
