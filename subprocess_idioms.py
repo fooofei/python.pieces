@@ -79,6 +79,10 @@
     Python2.6 直接抛出异常，不管待测试命令是否在机器上。 要使用 shell=True
     git_exits = subprocess.Popen(list2cmd['command','-v','git'], shell=True)
 
+9 有可能遇到 ps 命令的输出是截断的，在每行为单位的截断。
+  解决办法有 2 个，运行 ps 命令附带参数 ww ,意思是 wide width
+  第二个是 Popen(cmd, env={"COLUMNS":""}) 搞一个大的数字，或者直接以空值覆盖掉
+
 '''
 
 import subprocess
