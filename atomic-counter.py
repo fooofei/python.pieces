@@ -12,7 +12,7 @@ itertools.count 是线程安全的计数 可以这样使用
 import itertools
 
 
-class with_current(object):
+class WithCurrent(object):
     '''
     为了方便查看 iterable 对象的 current 值
     '''
@@ -38,7 +38,7 @@ class with_current(object):
 class ThreadSafeStat(object):
 
     def __init__(self):
-        self.count = with_current(itertools.count())
+        self.count = WithCurrent(itertools.count())
 
     def atomic_add_count(self):
         self.count.next()
