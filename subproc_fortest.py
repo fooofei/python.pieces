@@ -1,4 +1,7 @@
 #coding=utf-8
+'''
+此文件用来给 subprocess_idioms.py 做辅助测试文件
+'''
 
 import sys
 import time
