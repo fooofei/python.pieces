@@ -37,9 +37,9 @@ class Poller(object):
         self._p.register(fd, events)
         self._callbacks[fd.fileno()]=(callback, fd, args)
 
-    def run_io_loop(self, max_loop_cnt=1000):
+    def run_io_loop(self, loop_max_cnt=1000):
         cnt = 0
-        while cnt < max_loop_cnt:
+        while cnt < loop_max_cnt:
             cnt += 1
             r = self._p.poll(-1)
             for fn,revents in r:
@@ -77,7 +77,7 @@ def entry():
 
     pl.register(listen_socket, POLLIN, listen_socket_event_callback, laddr, pl)
 
-    pl.run_io_loop(max_loop_cnt=10)
+    pl.run_io_loop(loop_max_cnt=10)
 
 if __name__ == '__main__':
     entry()
