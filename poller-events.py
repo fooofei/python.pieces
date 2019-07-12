@@ -5,7 +5,7 @@
 
 ncat -lvkt
 
-ncat -vt 127.0.0.1 31337
+ncat -vt 127.0.0.1 4456
 
 
 1 测试如果对端SOCKET 强制结束，发来 FIN 报文后，
@@ -16,6 +16,12 @@ ncat -vt 127.0.0.1 31337
 在处理这个事件数组时，处理第一个事件，发现需要做某些动作，
 这个动作可能会破坏对象实例，导致在处理第二个事件时，
 实例被删除掉，找不到，就会异常。
+
+
+3 测试 setreadtimeout 对于非阻塞 socket 是否生效，
+效果是怎么样
+Python 对于 listensocket 和 其他socket 都没有看到效果，
+去 C 语言试试
 
 '''
 
@@ -29,10 +35,20 @@ from socket import SOCK_STREAM
 from socket import SO_REUSEADDR
 from socket import SOL_SOCKET
 from socket import SO_REUSEPORT
+from socket import SO_RCVTIMEO
+
 from select import POLLIN
 from select import POLLERR
 from select import POLLHUP
 from select import POLLOUT
+
+from ctypes import Structure
+from ctypes import c_uint64
+
+from struct import unpack
+from struct import pack
+
+import pysnooper
 
 
 class Poller(object):
@@ -45,6 +61,7 @@ class Poller(object):
         self._p.register(fd, events)
         self._callbacks[fd.fileno()]=(callback, fd, args)
 
+    @pysnooper.snoop()
     def run_io_loop(self, loop_max_cnt=1000):
         cnt = 0
         while cnt < loop_max_cnt:
@@ -54,6 +71,17 @@ class Poller(object):
                 value = self._callbacks[fn]
                 value[0](value[1],revents, *value[2])
 
+class timeval(Structure):
+    _fields_=[
+        ('tv_sec', c_uint64),
+        ('tv_usec', c_uint64)
+    ]
+    def __str__(self):
+        return '''{{"tv_sec":{}, "tv_usec":{}}}'''.format(
+            self.tv_sec, self.tv_usec
+        )
+
+
 def listen_socket_event_callback(fd, revents, laddr, pl):
     '''listen 的回调函数，生成一个 client socket '''
     print("listen_socket_event_callback-> {},{},{}"
@@ -61,7 +89,15 @@ def listen_socket_event_callback(fd, revents, laddr, pl):
     clt_socket, raddr = fd.accept()
     print("accept {}/{}".format(raddr, laddr))
     clt_socket.setblocking(False)
-    pl.register(clt_socket, POLLIN | POLLHUP | POLLOUT, clt_socket_event_callback)
+
+    # both timeval and struct.pack not have effect
+    #t = timeval()
+    #t.tv_sec = 1
+    #rc = clt_socket.setsockopt(SOL_SOCKET, SO_RCVTIMEO, t)
+    #rc = clt_socket.setsockopt(SOL_SOCKET, SO_RCVTIMEO, pack("LL", 1,0))
+    #print("set client socket SO_RCVTIMEO={} return={}".format(t, rc))
+
+    pl.register(clt_socket, POLLIN | POLLHUP , clt_socket_event_callback)
 
 def clt_socket_event_callback(fd, revents):
     '''client socket 的回调函数'''
@@ -100,6 +136,7 @@ def event_string(ev):
             r.append(var[1])
     return " ".join(r)
 
+@pysnooper.snoop()
 def entry():
     laddr = ("127.0.0.1", 4456)
     listen_socket = socket(AF_INET, SOCK_STREAM)
@@ -109,6 +146,12 @@ def entry():
 
     listen_socket.bind(laddr)
     listen_socket.listen(3)
+
+    # set SO_RCVTIMEO on listensocket not effect accept()
+    t = timeval()
+    t.tv_sec = 1
+    rc = listen_socket.setsockopt(SOL_SOCKET, SO_RCVTIMEO, t)
+    print("set listen socket SO_RCVTIMEO={} return={}".format(t, rc))
 
     print("listen on {}".format(laddr))
 
