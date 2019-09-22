@@ -20,79 +20,77 @@ count = 0
 
 
 class Instance(object):
-  def __init__(self, v):
-    global count
-    print ('instance init {}'.format(count))
-    count += 1
-    self._v = v
+    def __init__(self, v):
+        global count
+        print('instance init {}'.format(count))
+        count += 1
+        self._v = v
 
-  @property
-  def v(self):
-    return self._v
+    @property
+    def v(self):
+        return self._v
 
-  def __del__(self):
-    print ('instance del')
+    def __del__(self):
+        print('instance del')
 
-  def __str__(self):
-    return super(Instance, self).__str__()
+    def __str__(self):
+        return super(Instance, self).__str__()
 
-  def __repr__(self):
-    return '{}'.format(self.v)
+    def __repr__(self):
+        return '{}'.format(self.v)
 
 
 class MyTestCase(unittest.TestCase):
-  def test_fetch_iterator_value(self):
-    a = [Instance(i) for i in range(10)]
-    ai = iter(a)
-    self.assertEqual(a, list(ai))
-    self.assertEqual([], list(ai))
+    def test_fetch_iterator_value(self):
+        a = [Instance(i) for i in range(10)]
+        ai = iter(a)
+        self.assertEqual(a, list(ai))
+        self.assertEqual([], list(ai))
 
-  def test_tee_iterator1(self):
-    a = [Instance(i) for i in range(10)]
+    def test_tee_iterator1(self):
+        a = [Instance(i) for i in range(10)]
 
-    ai = iter(a)
+        ai = iter(a)
 
-    ai1, ai2 = itertools.tee(ai)
+        ai1, ai2 = itertools.tee(ai)
 
-    self.assertEqual(a, list(ai1))
-    self.assertEqual([], list(ai))
+        self.assertEqual(a, list(ai1))
+        self.assertEqual([], list(ai))
 
-  def test_tee_iterator2(self):
-    a = [Instance(i) for i in range(10)]
+    def test_tee_iterator2(self):
+        a = [Instance(i) for i in range(10)]
 
-    ai = iter(a)
+        ai = iter(a)
 
-    ai1, ai2 = itertools.tee(ai)
+        ai1, ai2 = itertools.tee(ai)
 
-    self.assertEqual(a, list(ai1))
-    self.assertEqual(a, list(ai2))
+        self.assertEqual(a, list(ai1))
+        self.assertEqual(a, list(ai2))
 
-  def test_tee_iterator3(self):
-    a = [Instance(i) for i in range(10)]
+    def test_tee_iterator3(self):
+        a = [Instance(i) for i in range(10)]
 
-    ai = iter(a)
+        ai = iter(a)
 
-    ai1, ai2 = itertools.tee(ai)
+        ai1, ai2 = itertools.tee(ai)
 
-    self.assertEqual(a, list(ai))
+        self.assertEqual(a, list(ai))
 
-    self.assertEqual([], list(ai1))
-    self.assertEqual([], list(ai2))
+        self.assertEqual([], list(ai1))
+        self.assertEqual([], list(ai2))
 
-  def test_tee_iterator4(self):
-    a = [Instance(i) for i in range(10)]
-    ai = iter(a)
-    ai1, ai2 = itertools.tee(ai)
+    def test_tee_iterator4(self):
+        a = [Instance(i) for i in range(10)]
+        ai = iter(a)
+        ai1, ai2 = itertools.tee(ai)
 
+        # this will effect a and list(ai2)
+        for v in ai1:
+            if v.v == 5:
+                v._v = 55
 
-    # this will effect a and list(ai2)
-    for v in ai1:
-      if v.v == 5:
-        v._v = 55
-
-
-    self.assertEqual(a, list(ai2))
+        self.assertEqual(a, list(ai2))
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

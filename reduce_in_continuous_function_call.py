@@ -13,63 +13,63 @@ from functools import reduce as reduce
 
 
 def func_raw(var):
-  if var:
-    var = func1(var)
     if var:
-      var = func2(var)
-      if var:
-        return func3(var)
-  return None
+        var = func1(var)
+        if var:
+            var = func2(var)
+            if var:
+                return func3(var)
+    return None
 
 
 def func_refactoring_code(var):
-  _fn = lambda x, y: y(x) if x else None
-  return (reduce(_fn, [var, func1, func2, func3]))
+    _fn = lambda x, y: y(x) if x else None
+    return (reduce(_fn, [var, func1, func2, func3]))
 
 
 def _one_call(start_num):
-  v = func_refactoring_code(start_num)
-  print('result :{}'.format(v))
-  assert (v == func_raw(start_num))
+    v = func_refactoring_code(start_num)
+    print('result :{}'.format(v))
+    assert (v == func_raw(start_num))
 
 
 def func1(a):
-  print('call {}'.format(func1.__name__))
-  if a < 3:
-    return None
-  return a + 1
+    print('call {}'.format(func1.__name__))
+    if a < 3:
+        return None
+    return a + 1
 
 
 def func2(a):
-  print('call {}'.format(func2.__name__))
-  if a < 7:
-    return None
-  return a + 2
+    print('call {}'.format(func2.__name__))
+    if a < 7:
+        return None
+    return a + 2
 
 
 def func3(a):
-  print('call {}'.format(func3.__name__))
-  if a < 10:
-    return None
-  return a + 3
+    print('call {}'.format(func3.__name__))
+    if a < 10:
+        return None
+    return a + 3
 
 
 def entry():
-  from functools import reduce
+    from functools import reduce
 
-  print('begin 1 --------')
-  _one_call(1)
-  print('\n\nbegin 3 --------')
-  _one_call(3)
-  print('\n\nbegin 4 --------')
-  _one_call(4)
+    print('begin 1 --------')
+    _one_call(1)
+    print('\n\nbegin 3 --------')
+    _one_call(3)
+    print('\n\nbegin 4 --------')
+    _one_call(4)
 
-  print('\n\nbegin 10 --------')
-  _one_call(10)
+    print('\n\nbegin 10 --------')
+    _one_call(10)
 
 
 if __name__ == '__main__':
-  entry()
+    entry()
 
 '''
 begin 1 --------              
