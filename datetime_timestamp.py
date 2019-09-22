@@ -20,6 +20,12 @@ def unix2datetime(t):
     return datetime.fromtimestamp(t)
 
 def monthdelta(date: datetime, delta: int) -> datetime:
+    '''
+    same with timedelta, but add or sub with months
+    :param date:
+    :param delta:
+    :return:
+    '''
     new_year, new_month = date.year, date.month
     func_offmonth = prevmonth if delta < 0 else nextmonth
     for _ in range(0,abs(delta)):
