@@ -3,7 +3,7 @@
 '''
 See A class with one member, one method
 
-is can equivalent with a closure.
+is can equivalent to a closure.
 
 '''
 
@@ -25,7 +25,7 @@ def closure_increment():
         return _value[0]
 
     _value=[1]
-    return _inner  # Cannot be _inner()
+    return _inner  # not _inner()
 
 
 

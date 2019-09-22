@@ -24,6 +24,8 @@ https://stackoverflow.com/questions/26957831/edit-existing-excel-workbooks-and-s
 
 20180623 看到了 xlwings 这个 以后有机会试用
 
+20190922 哪个模块合适用的时候再挑吧
+
 '''
 
 import os
@@ -57,7 +59,7 @@ def entry():
    # writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
     with pandas.ExcelWriter(fullpath)as writer:
         writer.book = wbook
-        for k,v in sheets.iteritems():
+        for k,v in sheets.items():
             df = pandas.DataFrame(v)
             df.to_excel(writer,k, index=False,header=[u'ESN',u'设备名称',u'设备型号',u'站点',u'描述'])
         writer.save()

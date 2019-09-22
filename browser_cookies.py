@@ -1,7 +1,7 @@
 #coding=utf-8
 
 '''
-the file shows how to get cookies from Chrome browser installed machine.
+the file shows how to get cookies from machine which installed Chrome browser
 
 pycookiecheat 只支持 macOS linux 只支持 python3+
 pip3 install pycookiecheat
@@ -34,7 +34,7 @@ def _get_chrome_cookies_files():
 
 def _get_chrome_cookies():
   '''
-  return type is RequestsCookieJar
+
   on macOS, may need use authority check
 
   使用这个库需要修改 这个库的__init__.py
@@ -46,6 +46,7 @@ def _get_chrome_cookies():
 
   这个库会丢到 cookie ，能在chrome中看到的cookie 到这里就看不到了
 
+  @:return RequestsCookieJar
   '''
   import browsercookie
   from itertools import chain

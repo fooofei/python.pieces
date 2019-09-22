@@ -1,7 +1,9 @@
 #coding=utf-8
 
 '''
-timeti.default_timer() is a cross platform use
+
+计秒应该使用 timeit.default_time()
+timeit.default_timer() is a cross platform use
 
 '''
 

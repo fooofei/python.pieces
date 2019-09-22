@@ -2,6 +2,7 @@
 
 '''
 the file shows how to count in python
+Count 是 key 相同的累加求和
 the old way and the use collections.Counter  way
 '''
 
