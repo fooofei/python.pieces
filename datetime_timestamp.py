@@ -33,6 +33,13 @@ def monthdelta(date: datetime, delta: int) -> datetime:
     new_day = min(date.day, monthlen(new_year, new_month))
     return date.replace(day=new_day, month=new_month, year=new_year)
 
+def from_mysql_todays(days):
+    '''
+    :param days: int
+    :return: datetime
+    '''
+    return datetime.fromordinal(days-365)
+
 class MyTest(unittest.TestCase):
     def test1(self):
         a = datetime(year=2019, month=4, day=17)
@@ -43,6 +50,11 @@ class MyTest(unittest.TestCase):
         a = datetime(year=2019, month=1, day=31)
         b = monthdelta(a, 1)
         self.assertEqual(b, datetime(year=2019,month=2, day=28))
+
+    def test_mysql_todays(self):
+        a = 737928
+        b = from_mysql_todays(a)
+        self.assertEqual(b, datetime(year=2020, month=5, day=18))
 
 if __name__ == '__main__':
     a = unix2datetime(1555430400)
