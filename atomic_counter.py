@@ -15,6 +15,12 @@ import itertools
 class WithCurrent(object):
     '''
     为了方便查看 iterable 对象的 current 值
+    when called next, will have self.current
+
+    c = WithCurrent(itertools.count())
+    for i in c:
+        print(i)
+        print(c.current)
     '''
     def __init__(self, generator):
         self.__gen = iter(generator)
@@ -22,15 +28,16 @@ class WithCurrent(object):
     def __iter__(self):
         return self
 
-    def n_next(self):
+    def _next(self):
+        ''' self.next() self.__next__ () call this'''
         self.current = next(self.__gen)
         return self.current
 
     def __next__(self):
-        return self.n_next()
+        return self._next()
 
     def next(self):
-        return self.n_next()
+        return self._next()
 
     def __call__(self):
         return self
