@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 
 '''
 The main idea is to use dictionnaries instead of doubly-linked lists to represent the matrix.
@@ -9,40 +9,44 @@ For this, we can modify X by transforming it into a dictionnary.
 In the above example, it would be written like this
 '''
 
-def solve(X, Y, solution):
-    if not X:
+
+def solve(columns, rows, solution):
+    if not columns:
         yield list(solution)
     else:
-        c = min(X, key=lambda c: len(X[c]))
-        for r in list(X[c]):
+        c = min(columns, key=lambda c: len(columns[c]))
+        for r in list(columns[c]):
             solution.append(r)
-            cols = select(X, Y, r)
-            for s in solve(X, Y, solution):
+            cols = select(columns, rows, r)
+            for s in solve(columns, rows, solution):
                 yield s
-            deselect(X, Y, r, cols)
+            deselect(columns, rows, r, cols)
             solution.pop()
 
-def select(X, Y, r):
+
+def select(columns, rows, r):
     cols = []
-    for j in Y[r]:
-        for i in X[j]:
-            for k in Y[i]:
-                if k != j:
-                    X[k].remove(i)
-        cols.append(X.pop(j))
+    for column_name in rows[r]:
+        for row_name in columns[column_name]:
+            for k in rows[row_name]:
+                if k != column_name:
+                    columns[k].remove(row_name)
+        cols.append(columns.pop(column_name))
     return cols
 
-def deselect(X, Y, r, cols):
-    for j in reversed(Y[r]):
-        X[j] = cols.pop()
-        for i in X[j]:
-            for k in Y[i]:
-                if k != j:
-                    X[k].add(i)
+
+def deselect(columns, rows, r, cols):
+    for column_name in reversed(rows[r]):
+        columns[column_name] = cols.pop()
+        for row_name in columns[column_name]:
+            for k in rows[row_name]:
+                if k != column_name:
+                    columns[k].add(row_name)
+
 
 def main():
-    X1 = {1, 2, 3, 4, 5, 6, 7}
-    Y1 = {
+    cols = {1, 2, 3, 4, 5, 6, 7}
+    rows = {
         'A': [1, 4, 7],
         'B': [1, 4],
         'C': [4, 5, 7],
@@ -50,16 +54,17 @@ def main():
         'E': [2, 3, 6, 7],
         'F': [2, 7]}
 
-    X = {j: set() for j in X1}
-    for i in Y1:
-        for j in Y1[i]:
-            X[j].add(i)
+    X = {j: set() for j in cols}
+    for row_name, subsets in rows.items():
+        for col_name in subsets:
+            X[col_name].add(row_name)
 
     solution = []
-    for i in solve(X,Y1, solution):
+    for i in solve(X, rows, solution):
         print(f"answer= {i}")
 
     print(solution)
+
 
 if __name__ == '__main__':
     main()
