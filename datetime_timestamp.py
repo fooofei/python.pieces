@@ -7,6 +7,7 @@ import unittest
 from calendar import nextmonth
 from calendar import prevmonth
 from calendar import monthlen
+from datetime import timedelta
 
 
 def datetime2unix(dt):
