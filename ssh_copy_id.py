@@ -1,5 +1,8 @@
 #coding=utf-8
-
+'''
+python3
+先用 password 模式 ssh 登陆主机，然后把自己的 ssh key 加入到机器中
+'''
 
 import os
 import sys
@@ -31,39 +34,50 @@ from binascii import hexlify
 from timeit import default_timer as Time
 
 
-
 def ssh_run(cnn, cmd):
-    for i in range(2,10):
+    for i in range(2, 10):
         try:
-            return cnn.run(**{"command": cmd, "hide": True, "warn": True, "encoding":"utf-8"})
+            return cnn.run(**{"command": cmd, "hide": True, "warn": True, "encoding": "utf-8"})
         except EOFError as eoferr:
             # INFO:paramiko.transport:Connected (version 2.0, client OpenSSH_7.4)
             # DEBUG:paramiko.transport:EOF in transport thread
-            print("try {} at {} {} times".format(cmd, cnn.original_host, i))
+            print(f"try {cmd} at {cnn.original_host} {i} times {eoferr}")
             sys.stdout.flush()
+
 
 def view_resp(rc):
     if isinstance(rc, transfer.Result):
-        return u"put to {}".format(rc.remote).encode("utf-8")
+        return f"put to {rc.remote}"
     if isinstance(rc, SSHRunResult):
-        return (u"{} \n  return_code={}\n  stderr=\n{}\n  stdout=\n{}").format(
-            rc.command, rc.return_code, rc.stderr, rc.stdout).encode("utf-8")
-    return u"{}".format(rc).encode("utf-8")
+        return f"{rc.command} \n  return_code={rc.return_code}\n  stderr=\n{rc.stderr}\n  stdout=\n{rc.stdout}"
+    return f"{rc}"
 
 
 @contextmanager
-def connect(host):
+def connect(host_info):
+    '''
+    :param host_info:
+        {"password": <optional>,
+        "host": "ip addr",
+        "port": int, <optional>,
+        "user": <optional>,
+        }
+    :return:
+    '''
     cnt_kwargs = {}
-    if host[1]:
-        cnt_kwargs.update({"password": host[1]})
+    passwd = host_info.get("password", "")
+    if passwd != "":
+        cnt_kwargs.update({"password": passwd})
     else:
-        cnt_kwargs.update({"key_filename": "<>", "look_for_keys": False,})
+        cnt_kwargs.update({"key_filename": "<>", "look_for_keys": False, })
 
     cnt_kwargs.update({
-        "banner_timeout":60, # prevent :SSHException: Error reading SSH protocol banner
-        "compress":True,
-                       })
-    cnn = SSHConnection(host=host[0], port=22,
+        "banner_timeout": 60,  # prevent :SSHException: Error reading SSH protocol banner
+        "compress": True,
+    })
+    cnn = SSHConnection(host=host_info.get("host"),
+                        port=host_info.get("port", 22),
+                        user=host_info.get("user", "root"),
                         connect_kwargs=cnt_kwargs,
                         connect_timeout=60,
                         # forward_agent=True # if not, rsync always error Host key verification fail
@@ -100,12 +114,8 @@ def main():
         hosts = [
         ]
 
-        pwd = ""
-        for h in [""]:
-            hosts.append(("root@{}".format(h), pwd))
-
         for i, host in enumerate(hosts):
-            print("--------{}-------- {}".format(i, host))
+            print(f"-[{i}]--------------- {host}")
             sys.stdout.flush()
 
             for _ in range(2):
@@ -119,28 +129,28 @@ def main():
                         onlines.append(host)
                         break
                 except SSHException as ssherr:
-                    print("{} {}".format(type(ssherr), ssherr))
+                    print(f"{type(ssherr)} {ssherr}")
                     continue
                 except sotimeout as tmoerr:
-                    print("{} {}".format(type(tmoerr), tmoerr))
+                    print(f"{type(tmoerr)} {tmoerr}")
                     continue
                 except soerror as soerr:
-                    print("{} {}".format(type(soerr), soerr))
+                    print(f"{type(soerr)} {soerr}")
                     continue
             else:
                 offlines.append(host)
     except KeyboardInterrupt:
         pass
 
-
-    print('onlines=[')
+    print('Onlines=[')
     for h in onlines:
-        print('''("{}",None),'''.format(h[0]))
+        print(f'''"{host_line(h)}",''')
     print("]")
-    print('offlines=[')
+    print('Offlines=[')
     for h in offlines:
-        print('''("{}",None),'''.format(h[0]))
+        print(f'''"{host_line(h)}",''')
     print("]")
+
 
 if __name__ == '__main__':
     main()
