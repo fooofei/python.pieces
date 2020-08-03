@@ -28,6 +28,7 @@ def sync_my_fork(local_repo):
     print(f"sync from")
     print(f"  {url}")
     print(f"  {branch}")
+    print(f"command git pull {url} {branch}")
     r = gr.repo.git.pull(url, branch)
     print(r)
 
