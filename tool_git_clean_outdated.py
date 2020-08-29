@@ -35,7 +35,7 @@ def clean_outdated(local_repo):
     # `git branch -vv | grep ': gone]' | awk '{print $1}'`
     for branch in branches:
         trk_branch = branch.tracking_branch()
-        if trk_branch.is_valid():
+        if trk_branch is not None and trk_branch.is_valid():
             valid_branches.append(branch)
         else:
             invalid_branches.append(branch)
