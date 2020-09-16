@@ -10,6 +10,11 @@ subprocess 模块使用的技法
 应该是 sh 第三方模块了。
 https://amoffat.github.io/sh/
 
+_cwd=curpath, 
+_out=sys.stdout, 
+_err=sys.stdout
+_ok_code=[0, 1] # 用来避免抛异常
+
 '''
 
 import sh
