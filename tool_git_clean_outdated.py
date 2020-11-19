@@ -1,6 +1,9 @@
 # coding=utf-8
 '''
 有些本地分支在远端已经不存在了，提供脚本删除
+
+doc https://gitpython.readthedocs.io/en/stable/tutorial.html
+
 '''
 
 import git
@@ -29,6 +32,11 @@ def clean_outdated(local_repo):
     r = remote.fetch()
     for value in list(r):
         print(f"  {value}")
+
+    # 先把本地记录的远程都与远程同步
+    print(f"sync remote with local ...")
+    r = g.git.remote("prune", "origin")
+    print(f"{r}")
 
     valid_branches = []
     invalid_branches = []
