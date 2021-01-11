@@ -71,7 +71,7 @@ def close_at(a, b):
     a = a.replace(tzinfo=None)
     b = b.replace(tzinfo=None)
     c = b - a
-    return abs(c.total_seconds()) < 15
+    return abs(int(c.total_seconds())) < 15
 
 
 class MyTest(unittest.TestCase):
