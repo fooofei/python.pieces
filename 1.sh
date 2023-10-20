@@ -21,3 +21,12 @@ If you are using ZSH, run the following commands:
 echo 'export MODULAR_HOME="/root/.modular"' >> ~/.zshrc
 echo 'export PATH="/root/.modular/pkg/packages.modular.com_mojo/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
+
+
+# 20231020 测试效果
+
+生成的文件，可以在我的机器上运行，coredump 问题已经解决。
+但是运行 python 模块需要设置 MOJO_PYTHON_LIBRARY 变量 export MOJO_PYTHON_LIBRARY=/usr/lib64/libpython3.so
+并且 mojo 代码中引用的 py 文件还是要存在的，并没有被编译进可执行文件中
+
+继续等待 mojo 生成静态链接文件。
