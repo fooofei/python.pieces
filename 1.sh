@@ -1,7 +1,7 @@
 
-docker pull swr.cn-north-4.myhuaweicloud.com/fooofei/mojo:0909
+docker pull swr.cn-north-4.myhuaweicloud.com/fooofei/mojo:1020
 
-docker run -it -v$(pwd):/host --network=host --name=temp --rm swr.cn-north-4.myhuaweicloud.com/fooofei/mojo:0909 bash 
+docker run -it -v$(pwd):/host --network=host --name=temp --rm swr.cn-north-4.myhuaweicloud.com/fooofei/mojo:1020 bash 
 apt install python3.10-venv -y
 apt-get update
 apt-get install modular -y
