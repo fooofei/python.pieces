@@ -1,11 +1,13 @@
 # coding=utf-8
 '''
-该文件演示了如何使用 pyyaml 读写 yaml
+该文件演示了如何使用 ruamel 读写 yaml
 '''
 import unittest
 from io import StringIO
 
-import yaml as pyyaml # pip install PyYAML
+import ruamel.yaml as ruamel # pip install ruamel.yaml 
+from ruamel.yaml.representer import SafeRepresenter as RuamelSafeRepresenter
+
 
 def str_presenter(dumper, data):
     '''
@@ -16,33 +18,18 @@ def str_presenter(dumper, data):
         return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
-
-pyyaml.add_representer(str, str_presenter)
-# to use with safe_dump:
-pyyaml.representer.SafeRepresenter.add_representer(str, str_presenter)
-
-def pyyaml_yaml(instream: object, outstream: object):
-    config = pyyaml.safe_load(instream)
-    # config type is dict
-    pyyaml.safe_dump(config, outstream, encoding="utf-8", allow_unicode=True, sort_keys=True, indent=2)
+RuamelSafeRepresenter.add_representer(str, str_presenter)
 
 
-
-class NoMergeLoader(pyyaml.SafeLoader):
-    def construct_mapping(self, node, deep=False):
-        return pyyaml.BaseLoader.construct_mapping(self, node, deep=deep)
-
-NoMergeLoader.add_constructor('tag:yaml.org,2002:merge', NoMergeLoader.construct_scalar)
-
-'''
-使用如下
-        with codecs.open(file_path, 'r', encoding='utf-8-sig') as yaml_file:
-            loader = NoMergeLoader(yaml_file)
-            try:
-                return loader.get_single_data()
-            finally:
-                loader.dispose()
-'''
+def ruamel_yaml(instream: object, outstream: object):
+    yaml = ruamel.YAML(typ=["safe"])
+    yaml.default_flow_style = False
+    yaml.encoding = "utf-8"
+    yaml.preserve_quotes = True
+    # 不用 yaml.canonical = True # 会格式化为 !!str
+    config = yaml.load(instream)
+    # config type is CommentedMap
+    yaml.dump(config, outstream)
 
 class Test(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -70,13 +57,12 @@ root:
 '''
         self.expect = expect
 
-    def test_pyyaml_write_as_expect_read(self):
+    def test_ruamel_write_as_expect_read(self):
         instream = StringIO(self.content)
         outstream = StringIO()
-        pyyaml_yaml(instream, outstream)
+        ruamel_yaml(instream, outstream)
         # outstream.seek(0)
         out = outstream.getvalue()
-
         expect = self.expect
         expect = expect.lstrip()
         self.assertEqual(expect, out)
