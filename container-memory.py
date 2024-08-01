@@ -133,6 +133,27 @@ def mem_stats():
 
     container_memory_max_usage_bytes > container_memory_usage_bytes >= container_memory_working_set_bytes > container_memory_rss
 
+    总结下面的
+    cgroup memory.usage_in_bytes = cgroup memory.stat rss+cache 
+    container_memory_working_set_bytes 指标的组成实际上是 RSS + Cache
+    container_memory_working_set_bytes 是cadvisor定义，= cgroup memory.usage_in_bytes - memory.stat.total_inactive_file =  RSS + Cache
+
+    go 语言
+    go_memstats_heap_inuse_bytes > go_memstats_alloc_bytes
+      原因： go_memstats_heap_inuse_bytes可能大于go_memstats_alloc_bytes，因为堆内存可能包含一些空闲的内存块，而这些内存块不被视为已分配的内存。
+        此外，go_memstats_heap_inuse_bytes还包括了Go程序中使用的堆内存的开销，例如内存管理的元数据等，而go_memstats_alloc_bytes只包括了实际分配的内存量。
+      所以说 alloc 叫分配，可能是对象的分配，元数据不算在这里面，但是在 inuse 里面
+    使用 go_memstats_heap_inuse_bytes 更好 
+
+    go_memstats_alloc_bytes  和 go_memstats_heap_alloc_bytes 是一致的
+
+    go_memstats_heap_sys_bytes 
+        不会降低，解释是
+        当程序释放内存时，这些内存并不会立即返回给操作系统，而是被Go的内存池回收，以备后续使用。这意味着HeapSys的值不会因为内存释放而减少。
+
+    go_memstats_alloc_bytes_total 不用分析
+    go_memstats_stack_inuse_bytes 不用分析
+
     for file in /proc/*/status ; do awk '/VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | sort -k 2 -n -r | grep stress
     '''
     # cat /sys/fs/cgroup/memory/memory.usage_in_bytes
