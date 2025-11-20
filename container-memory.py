@@ -125,7 +125,7 @@ def mem_stats():
       > /sys/fs/cgroup/memory/memory.usage_in_bytes  = cAdvisor container_memory_usage_bytes
         >= （没有对应 cgroup 字段） container_memory_working_set_bytes = 执行kubectl top pod命令得到的结果(kubectl top pod <> --containers) 是容器真实使用的内存量，也是资源限制limit时的重启判断依据
           = 指标的组成实际上是 RSS + Cache  /sys/fs/cgroup/memory/memory.stat  rss 字段和 cache 字段
-          = /sys/fs/cgroup/memory/memory.usage_in_bytes - /sys/fs/cgroup/memory/memory.stat.total_inactive_file
+          = /sys/fs/cgroup/memory/memory.usage_in_bytes - (/sys/fs/cgroup/memory/memory.stat | grep total_inactive_file)
           > container_memory_rss
 
     /sys/fs/cgroup/memory/memory.limit_in_bytes
@@ -187,5 +187,6 @@ def mem_stats():
 
 if __name__ == '__main__':
     mem_stats()
+
 
 
