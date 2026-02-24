@@ -127,6 +127,7 @@ def mem_stats():
           = 指标的组成实际上是 RSS + Cache  /sys/fs/cgroup/memory/memory.stat  rss 字段和 cache 字段
           = /sys/fs/cgroup/memory/memory.usage_in_bytes - (/sys/fs/cgroup/memory/memory.stat | grep total_inactive_file)
           > container_memory_rss
+          这里有一个详细的图 https://blog.csdn.net/u010657094/article/details/138510248
 
     /sys/fs/cgroup/memory/memory.limit_in_bytes
     
@@ -187,6 +188,7 @@ def mem_stats():
 
 if __name__ == '__main__':
     mem_stats()
+
 
 
 
